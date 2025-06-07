@@ -1,0 +1,123 @@
+{
+  "parameters" : {
+    "probabilities" : {
+      "256_bit_cipher" : [
+        {"value" : "AES256GCM", "probability" : 0.5},
+        {"value" : "CHACHA20POLY1305", "probability" : 0.5}
+      ],
+      "extra_field_nbytes_handshake" : [
+        {"value" : 0, "probability" : 0.5},
+        {"value" : 1, "probability" : 0.5}
+      ],
+      "extra_field_nbytes_data" : [
+        {"value" : 0, "probability" : 0.5},
+        {"value" : 1, "probability" : 0.5}
+      ],
+      "greeting_reversed" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "has_greeting" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "has_nonce" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "key_pattern" : [
+        {"value" : "pattern1", "probability" : 0.125},
+        {"value" : "pattern2", "probability" : 0.125},
+        {"value" : "pattern3", "probability" : 0.125},
+        {"value" : "pattern4", "probability" : 0.125},
+        {"value" : "pattern5", "probability" : 0.125},
+        {"value" : "pattern6", "probability" : 0.125},
+        {"value" : "pattern7", "probability" : 0.125},
+        {"value" : "pattern8", "probability" : 0.125}
+      ],
+      "length_field_nbytes" : [
+        {"value" : 2, "probability" : 0.5},
+        {"value" : 4, "probability" : 0.5}
+      ],
+      "length_field_covered_by_mac" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "major_version" : [
+        {"value" : 1, "probability" : 0.5},
+        {"value" : 2, "probability" : 0.5}
+      ],
+      "minor_version" : [
+        {"value" : 1, "probability" : 0.5},
+        {"value" : 2, "probability" : 0.5}
+      ],
+      "normal_types_first" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "overall_structure" : [
+        {"value" : 0, "probability" : 0.5},
+        {"value" : 1, "probability" : 0.5}
+      ],
+      "padding_length" : [
+        {"value" : 2, "probability" : 0.5},
+        {"value" : 4, "probability" : 0.5}
+      ],
+      "reserved_field_length_nbytes" : [
+        {"value" : 0, "probability" : 0.5},
+        {"value" : 1, "probability" : 0.5}
+      ],
+      "sec_param" : [
+        {"value" : 128, "probability" : 0.5},
+        {"value" : 256, "probability" : 0.5}
+      ],
+      "send_encrypted_cert" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "separate_length_field" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "subprotocol_nrounds" : [
+        {"value" : 0, "probability" : 0.33},
+        {"value" : 1, "probability" : 0.33},
+        {"value" : 2, "probability" : 0.34}
+      ],
+      "type_field_encrypted" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "type_num_start_val" : [
+        {"value" : 0, "probability" : 0.25},
+        {"value" : 1, "probability" : 0.25},
+        {"value" : 10, "probability" : 0.25},
+        {"value" : 20, "probability" : 0.25}
+      ],
+      "version_field_encrypted" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "version_field_in_handshake" : [
+        {"value" : "false", "probability" : 0.5},
+        {"value" : "true", "probability" : 0.5}
+      ],
+      "version_field_nbytes" : [
+        {"value" : 1, "probability" : 0.5},
+        {"value" : 2, "probability" : 0.5}
+      ]
+    },
+
+    "ranges" : {
+      "encrypted_cert_nbytes" : {
+        "min" : 1, "max" : 1000
+      },
+      "subprotocol_round_sizes" : {
+        "min" : 1, "max" : 1000
+      },
+      "ntype_nums" : {
+        "min" : 1, "max" : 10
+      }
+    }
+  }
+}
