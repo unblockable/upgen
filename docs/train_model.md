@@ -1,7 +1,8 @@
 # Model Training
 
+Before creating a PSF, we first need a model to generate greeting strings.
 To train the model, follow the following steps:
-We assume that installation is done and you are in the root directory
+We assume that installation is done and you are in the root directory.
 
 1. First go to greeting directory
 
@@ -9,7 +10,14 @@ We assume that installation is done and you are in the root directory
 [~/upgen] $ cd src/greeting/
 ```
 
-2. In next step, generate the input file (write the script in shell to create) and place the input file in the current directory (greeting/).
+2. In next step, generate the input file and place the input file in the current directory (greeting/).
+You may use any script from [scripts](scripts.md) to create it or use your own script from somewhere else. 
+We provide a sample script here for help.
+
+```
+[~/upgen/src/greeting] $ curl -L 'https://data.gharchive.org/2015-01-01-15.json.gz' | gzip -dc | jq -r '.repo.name' | head -n 10000 > input_file.txt
+```
+
 We assume that the name of input file is `input_file.txt` for this documentation, but you can keep any name.
 
 3. Then, find the best parameters for model. Use the following command:

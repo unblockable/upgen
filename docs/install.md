@@ -24,15 +24,15 @@ In case of any problem or troubleshooting, create an issue on GitHub.
 3. Go to upgen repo and install all the required dependencies
 
 ```
-[~/] $ cd upgen
-[~/upgen] $ pip install -r requirements.txt
+[~/](venv) $ cd upgen
+[~/upgen](venv) $ pip install -r requirements.txt
 ```
 
 4. Verify installation
 
 ```
-[~/upgen] $ cd src
-[~/upgen/src] $ python generate.py --help
+[~/upgen](venv) $ cd src
+[~/upgen/src](venv) $ python generate.py --help
 ```
 
 This completes the installation process of UPGen.

@@ -1,6 +1,6 @@
 # PSF Generation
 
-After training the model, create the PSF using the following instructions:
+After training the model, follow the following instructions to generate a PSF:
 
 1. Go back to src/ directory
 
@@ -22,7 +22,8 @@ After training the model, create the PSF using the following instructions:
 
 This will create a PSF file in the src/ directory.
 
-To create multiple PSFs, you can run bash script. For example,
+To create multiple PSFs, you can run bash scripts. 
+For example:
 
 ```
 [~/upgen/src] $ for i in {1..10}
@@ -37,6 +38,6 @@ do
 done
 ```
 
-This will create 10 PSFs. Users can customise it to create their required number of PSFs easily.
+This script will create 10 PSFs. Users can customise it or use their own scripts to create required number of PSFs easily.
 
 ---
