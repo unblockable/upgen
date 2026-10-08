@@ -1,50 +1,52 @@
 # Model Training
 
-Before creating a PSF, we first need a model to generate greeting strings.
-To train the model, follow the following steps:
-We assume that installation is done and you are in the root directory.
+Before creating a PSF, we first need a model to generate greeting strings. To
+train the model, follow the following steps.
 
 1. First go to greeting directory
 
 ```
-[~/upgen] $ cd src/greeting/
+$ cd src/greeting/
 ```
 
-2. In next step, generate the input file and place the input file in the current directory (greeting/).
-You may use any script from [scripts](scripts.md) to create it or use your own script from somewhere else. 
-We provide a sample script here for help.
+2. Next, generate the input file and place it in the current directory
+   (`greeting/`). The included download script retrieves repository names from
+   one hour of [GH Archive](https://www.gharchive.org/) data:
 
 ```
-[~/upgen/src/greeting] $ curl -L 'https://data.gharchive.org/2015-01-01-15.json.gz' | gzip -dc | jq -r '.repo.name' | head -n 10000 > input_file.txt
+$ python3 ../../scripts/download_gharchive_repos.py
 ```
 
-We assume that the name of input file is `input_file.txt` for this documentation, but you can keep any name.
+By default, the script downloads the archive for January 1, 2015 at 15:00 UTC
+and writes up to 10,000 names to `repos.txt`. Run it with `--help` to see
+options for changing the date, hour, limit, or output file. It uses only the
+Python standard library. You can also use your own script, provided that it
+writes one `owner/repository` entry per line.
 
-3. Then, find the best parameters for model. Use the following command:
-
-```
-[~/upgen/src/greeting] $ python3 train.py -c 0 -y input_file.txt --output_filepath best_params.pkl
-```
-
-Note that if you don't have a CUDA GPU, then remove the -c 0 flag. This is only for CUDA/NVIDIA GPUs.
-This step will generate a file called `best_params.pkl`
-
-It may take some time to create it, so be patient.
-
-4. After previous step, create a directory inside the greeting/, we name it trained_model/ but users can pick any name according to their own.
+3. Then, find the best parameters for the model. Use the following command:
 
 ```
-[~/upgen/src/greeting] $ mkdir trained_model/
+$ python3 train.py -c 0 -y repos.txt --output_filepath best_params.pkl
+```
+
+Note that if you don't have a CUDA GPU, then remove the -c 0 flag. This is only
+for CUDA/NVIDIA GPUs. This step will generate a file called `best_params.pkl`
+
+This command may take a while to complete.
+
+4. After previous step, create a directory inside greeting/. We name it
+   trained_model/, but you can pick any name.
+
+```
+$ mkdir trained_model/
 ```
 
 5. Then train the model
 
 ```
-[~/upgen/src/greeting] $ python3 train.py -c 0 -b best_params.pkl -d trained_model/ input_file.txt
+$ python3 train.py -c 0 -b best_params.pkl -d trained_model/ repos.txt
 ```
 
-It will create the model artifacts inside trained_model/ directory.
-To check sample model artifacts, please check the [model_samples](model_samples/) directory.
-This completes the model training and now we are ready to generate the PSFs.
-
----
+It will create the model artifacts inside trained_model/ directory. To check
+sample model artifacts, please check the [model_samples](model_samples/)
+directory. This completes model training and now we are ready to generate PSFs.

@@ -1,19 +1,15 @@
-# README
-
 This directory contains the documentation files of UPGen.
 
 ---
 
 ## Generation Process
 
-Carefully follow the given instructions to generate a PSF:
+Follow the given instructions to generate a PSF:
 
 1. First, follow the [installation](install.md) guide.
 
-2. Second, generate and train the model, whose complete procedure is given in [train_model.md](train_model.md) document.
+2. Second, generate and train the model, whose complete procedure is given in
+   [train_model.md](train_model.md) document.
 
-3. Third, after training the model, create the PSF using [generate_psf.md](generate_psf.md)
-
-After these three simple steps, PSF is generated.
-
----
+3. Third, after training the model, create the PSF using
+   [generate_psf.md](generate_psf.md)
