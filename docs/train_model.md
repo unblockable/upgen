@@ -39,6 +39,14 @@ This step generates `build/best_params.pkl`. Without additional options,
 training automatically selects Metal Performance Shaders on a supported Mac
 and otherwise uses the CPU.
 
+Hyperparameter tuning uses 5,000 randomly selected repository names by default.
+Change that sample count with `NUM_HYPERPARAM_SAMPLES`, making sure the input
+file contains at least that many names:
+
+```
+$ make tune NUM_HYPERPARAM_SAMPLES=10000
+```
+
 On Linux with a compatible NVIDIA GPU and driver, select the CUDA backend for
 every command in the workflow:
 
@@ -59,6 +67,14 @@ $ make train
 This creates `build/model/encoder.pkl` and `build/model/model.torch`. For CUDA
 training, run `make train CUDA=0`. Once training finishes, the model is ready
 to generate greeting strings.
+
+Final training uses 10,000 randomly selected repository names by default.
+Change the sample count with `NUM_TRAINING_SAMPLES`, making sure the input file
+contains at least that many names:
+
+```
+$ make train NUM_TRAINING_SAMPLES=50000
+```
 
 The paths can be customized with the `REPOS_FILE`, `BEST_PARAMS_FILE`, and
 `MODEL_DIR` Make variables.

@@ -25,6 +25,8 @@ BEST_PARAMS_FILE ?= $(BUILD_DIR)/best_params.pkl
 MODEL_DIR ?= $(BUILD_DIR)/model
 PSF_FILE ?= $(BUILD_DIR)/upgen.psf
 NUM_GENERATED ?= 1
+NUM_HYPERPARAM_SAMPLES ?= 5000
+NUM_TRAINING_SAMPLES ?= 10000
 ARGS ?=
 
 help:
@@ -71,6 +73,7 @@ tune:
 	mkdir -p "$(dir $(BEST_PARAMS_FILE))"
 	$(UV) run $(UV_BACKEND_OPTIONS) upgen-train \
 		--hyperparam_tune \
+		--num_hyperparam_samples "$(NUM_HYPERPARAM_SAMPLES)" \
 		--output_filepath "$(BEST_PARAMS_FILE)" \
 		"$(REPOS_FILE)" $(CUDA_OPTION) $(ARGS)
 .PHONY: tune
@@ -80,6 +83,7 @@ train:
 	$(UV) run $(UV_BACKEND_OPTIONS) upgen-train \
 		--best_params_filepath "$(BEST_PARAMS_FILE)" \
 		--output_dirpath "$(MODEL_DIR)" \
+		--num_training_samples "$(NUM_TRAINING_SAMPLES)" \
 		"$(REPOS_FILE)" $(CUDA_OPTION) $(ARGS)
 .PHONY: train
 

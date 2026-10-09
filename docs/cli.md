@@ -36,6 +36,8 @@ using a compatible pretrained greeting model.
 | -d, --output_dirpath PATH         | Directory where trained model artifacts are saved.                         |
 | -c, --cuda NUMBER                 | Enable CUDA training.                                                      |
 | -y, --hyperparam_tune             | Run hyperparameter tuning.                                                 |
+| --num_hyperparam_samples COUNT    | Number of repository names used for tuning; defaults to 5,000.             |
+| --num_training_samples COUNT      | Number of repository names used for training; defaults to 10,000.          |
 | --output_filepath PATH            | Save hyperparameter-tuning results to PATH, normally `build/best_params.pkl` in the Make workflow. |
 
 ---

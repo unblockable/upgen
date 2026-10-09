@@ -22,9 +22,21 @@ from .model import ModelType, SeqModel
 START_CHAR = "^"
 PAD_CHAR = " "
 
-HYPERPARAM_TUNE_NSAMPLES = 5000
 HYPERPARAM_TUNE_EPOCHS = 2
 HYPERPARAM_TUNE_TRIES = 50
+DEFAULT_NUM_HYPERPARAM_SAMPLES = 5_000
+DEFAULT_NUM_TRAINING_SAMPLES = 10_000
+
+
+def positive_integer(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be a positive integer") from error
+
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
 
 
 def select_device(cuda: typing.Optional[int]) -> torch.device:
@@ -293,9 +305,9 @@ def main(args: argparse.Namespace):
     names = names_of_lines(lines_of_file(args.input_filepath))
 
     if args.hyperparam_tune:
-        names = random.sample(names, HYPERPARAM_TUNE_NSAMPLES)
+        names = random.sample(names, args.num_hyperparam_samples)
     else:
-        names = random.sample(names, 10000)
+        names = random.sample(names, args.num_training_samples)
 
     name_lengths = [len(name) for name in names]
 
@@ -376,6 +388,23 @@ def parse_args():
     parser.add_argument("-d", "--output_dirpath")
     parser.add_argument("-c", "--cuda", type=int)
     parser.add_argument("-y", "--hyperparam_tune", action="store_true")
+    parser.add_argument(
+        "--num_hyperparam_samples",
+        type=positive_integer,
+        default=DEFAULT_NUM_HYPERPARAM_SAMPLES,
+        metavar="COUNT",
+        help=(
+            "number of repository names used for hyperparameter tuning "
+            "(default: %(default)s)"
+        ),
+    )
+    parser.add_argument(
+        "--num_training_samples",
+        type=positive_integer,
+        default=DEFAULT_NUM_TRAINING_SAMPLES,
+        metavar="COUNT",
+        help="number of repository names used for training (default: %(default)s)",
+    )
     parser.add_argument("input_filepath")
     parser.add_argument("--output_filepath")
     return parser.parse_args()
