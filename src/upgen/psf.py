@@ -401,6 +401,7 @@ class CryptoSegment:
             + "\n".join(map(str, self.enc_dirs))
         )
 
+
 @auto_str_repr
 @dataclass
 class SeparateLengthFieldSetting:
@@ -412,16 +413,15 @@ class SeparateLengthFieldSetting:
 
         return f"SEPARATE_LENGTH_FIELD = {value} ;"
 
+
 @auto_str_repr
 @dataclass
 class OptionsSegment:
     separate_length_field: typing.Optional[SeparateLengthFieldSetting]
 
     def to_str(self) -> str:
-        return (
-            "\n@SEGMENT.OPTIONS\n"
-            + util.str_of_optional(self.separate_length_field)
-        )
+        return "\n@SEGMENT.OPTIONS\n" + util.str_of_optional(self.separate_length_field)
+
 
 @auto_str_repr
 @dataclass

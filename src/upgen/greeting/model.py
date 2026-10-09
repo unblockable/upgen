@@ -1,9 +1,8 @@
+from enum import Enum, auto
 from itertools import repeat
 import typing
 
 import numpy as np
-
-from enum import Enum, auto
 import torch
 import torch.nn
 from torch.distributions import Categorical
@@ -58,8 +57,7 @@ class SeqModel(torch.nn.Module):
 
         if len(x.shape) == 3:
             return x[:, -1, :]
-        else:
-            return x[-1, :]
+        return x[-1, :]
 
     def sample(self, start_token, pad_token, window_size, nlabels, dev, temp=1.0):
         initial_window = np.array(
@@ -75,7 +73,7 @@ class SeqModel(torch.nn.Module):
 
         while next_token is None or next_token != pad_token:
             if ctr > 100:
-               # Try again.
+                # Try again.
                 return self.sample(
                     start_token, pad_token, window_size, nlabels, dev, temp
                 )
@@ -96,9 +94,7 @@ class SeqModel(torch.nn.Module):
             ctr += 1
 
         if output[0] == pad_token:
-           # Try again.
-            return self.sample(
-                start_token, pad_token, window_size, nlabels, dev, temp
-            )
+            # Try again.
+            return self.sample(start_token, pad_token, window_size, nlabels, dev, temp)
 
         return output[:-1]

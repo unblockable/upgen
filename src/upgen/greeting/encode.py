@@ -43,11 +43,11 @@ def one_hot(data: np.ndarray, n_labels: int) -> np.ndarray:
 
     retval_shape = data.shape + (n_labels,)
 
-    # Initialize the the encoded array
-    one_hot = np.zeros(retval_shape, dtype=np.float32)
+    # Initialize the encoded array
+    encoded = np.zeros(retval_shape, dtype=np.float32)
 
     for idx, row in enumerate(data):
         for jdx, char in enumerate(row):
-            one_hot[idx, jdx, char] = 1
+            encoded[idx, jdx, char] = 1
 
-    return one_hot
+    return encoded

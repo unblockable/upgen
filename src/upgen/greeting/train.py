@@ -5,18 +5,15 @@ from itertools import repeat
 import logging
 from pathlib import Path
 import pickle
-import typing
-import sys
-
 import random
+import sys
+import typing
+
 import numpy as np
-
 import torch
-import torch.optim as optim
-import torch.utils.data as data
-
 import torch.nn
-
+from torch import optim
+from torch.utils import data as torch_data
 from tqdm import tqdm
 
 from .encode import CharEncoder, one_hot
@@ -63,7 +60,7 @@ def select_device(cuda: typing.Optional[int]) -> torch.device:
 def lines_of_file(input_filepath: str) -> list[str]:
     lines = []
 
-    with open(input_filepath, "r") as in_f:
+    with open(input_filepath, "r", encoding="utf-8") as in_f:
         for line in in_f:
             lines.append(line.strip())
 
@@ -75,14 +72,18 @@ def names_of_lines(lines: list[str]) -> list[str]:
 
 
 def windows_of_data(
-    data: np.ndarray, window_nelems: int, start_token, pad_token, dtype=np.uint8
+    encoded_data: np.ndarray,
+    window_nelems: int,
+    start_token,
+    pad_token,
+    dtype=np.uint8,
 ) -> np.ndarray:
-    assert len(data.shape) == 1
+    assert len(encoded_data.shape) == 1
     assert window_nelems >= 2
 
     new_seq = (
         list(repeat(start_token, window_nelems - 1))
-        + list(x for x in data if x != pad_token)
+        + [value for value in encoded_data if value != pad_token]
         + [pad_token]
     )
 
@@ -97,20 +98,20 @@ def windows_of_data(
     return np.stack(windows)
 
 
-def X_y_of_windows(data: np.ndarray) -> typing.Tuple[torch.Tensor, torch.Tensor]:
-    # Assumes data is already windowed
-    nelems = data.shape[0]
+def x_y_of_windows(window_data: np.ndarray) -> tuple[torch.Tensor, torch.Tensor]:
+    # Assumes window_data is already windowed
+    nelems = window_data.shape[0]
 
-    X = data[0 : nelems - 1]
-    y = data[1:nelems]
+    x_values = window_data[0 : nelems - 1]
+    y_values = window_data[1:nelems]
 
-    index = X[:, -1, 0] != 1
-    X = X[index]
-    y = y[index]
+    index = x_values[:, -1, 0] != 1
+    x_values = x_values[index]
+    y_values = y_values[index]
 
-    y = y[:, -1, :]
+    y_values = y_values[:, -1, :]
 
-    return torch.from_numpy(X), torch.from_numpy(y)
+    return torch.from_numpy(x_values), torch.from_numpy(y_values)
 
 
 @dataclass
@@ -168,7 +169,7 @@ def train_model(
     dev,
     output_dirpath=None,
 ) -> tuple[SeqModel, float]:
-    logging.info(f"Trying with these params: {params}")
+    logging.info("Trying with these params: %s", params)
 
     windows = [
         windows_of_data(
@@ -180,16 +181,18 @@ def train_model(
     combined_windows: np.ndarray = np.concatenate(windows)
 
     one_hot_windows = one_hot(combined_windows, encoder.alphabet_size())
-    X, y = X_y_of_windows(one_hot_windows)
+    x_values, y_values = x_y_of_windows(one_hot_windows)
 
-    dataset = data.TensorDataset(X, y)
+    dataset = torch_data.TensorDataset(x_values, y_values)
 
-    training_data, validation_data = data.random_split(dataset, [0.9, 0.1])
+    training_data, validation_data = torch_data.random_split(dataset, [0.9, 0.1])
 
-    loader = data.DataLoader(training_data, shuffle=True, batch_size=params.batch_size)
+    loader = torch_data.DataLoader(
+        training_data, shuffle=True, batch_size=params.batch_size
+    )
 
     # Just small enough to fit a batch into memory
-    val_loader = data.DataLoader(validation_data, batch_size=1000)
+    val_loader = torch_data.DataLoader(validation_data, batch_size=1000)
 
     model = SeqModel(
         model_type=params.model_type,
@@ -209,11 +212,11 @@ def train_model(
     epoch_progress = tqdm(range(params.nepochs))
     for epoch in epoch_progress:
         model.train()
-        for X_batch, y_batch in tqdm(loader, leave=False):
-            X_batch = X_batch.to(dev)
+        for x_batch, y_batch in tqdm(loader, leave=False):
+            x_batch = x_batch.to(dev)
             y_batch = y_batch.to(dev)
 
-            y_pred = model(X_batch)
+            y_pred = model(x_batch)
 
             loss = loss_fn(y_pred, y_batch)
             optimizer.zero_grad()
@@ -227,14 +230,14 @@ def train_model(
         with torch.no_grad():
             val_loss = 0.0
 
-            for X_batch, y_batch in val_loader:
-                X_batch = X_batch.to(dev)
+            for x_batch, y_batch in val_loader:
+                x_batch = x_batch.to(dev)
                 y_batch = y_batch.to(dev)
 
-                y_pred = model(X_batch)
+                y_pred = model(x_batch)
                 val_loss += loss_fn(y_pred, y_batch).item()
 
-            logging.info(f"Total validation loss: {val_loss}")
+            logging.info("Total validation loss: %s", val_loss)
             val_losses.append(val_loss)
 
             if val_loss < best_val_loss:
@@ -247,7 +250,7 @@ def train_model(
 
             distance = len(val_losses) - np.argmin(val_losses) - 1
 
-            logging.info(f"Best model was found {distance} epochs ago...")
+            logging.info("Best model was found %s epochs ago...", distance)
 
             if distance >= 5:
                 logging.info("Early stopping condition hit!")
@@ -263,7 +266,7 @@ def train_model(
                 )
 
                 sample = encoder.decode(sample)
-                logging.info(f"Sample:\t{sample}")
+                logging.info("Sample:\t%s", sample)
 
     assert best_model is not None
     return (best_model, best_val_loss)
@@ -277,15 +280,15 @@ def main(args: argparse.Namespace):
         "error": logging.ERROR,
         "critical": logging.CRITICAL,
     }
-    format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
+    log_format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
     logging.basicConfig(
-        level=log_level_of_str[args.log_level], format=format, stream=sys.stderr
+        level=log_level_of_str[args.log_level], format=log_format, stream=sys.stderr
     )
-    logging.info(f"Program arguments:\t{args}")
+    logging.info("Program arguments:\t%s", args)
 
     dev = select_device(args.cuda)
 
-    logging.info(f"Using device:\t{dev}")
+    logging.info("Using device:\t%s", dev)
 
     names = names_of_lines(lines_of_file(args.input_filepath))
 
@@ -296,11 +299,11 @@ def main(args: argparse.Namespace):
 
     name_lengths = [len(name) for name in names]
 
-    logging.info(f"Average name length: {np.mean(name_lengths)}")
+    logging.info("Average name length: %s", np.mean(name_lengths))
 
     longest_name_nchars = max(len(name) for name in names)
 
-    logging.info(f"Longest name is {longest_name_nchars} chars long.")
+    logging.info("Longest name is %s chars long.", longest_name_nchars)
 
     padded_names = [
         START_CHAR + name.ljust(longest_name_nchars + 1, PAD_CHAR) for name in names
@@ -309,13 +312,10 @@ def main(args: argparse.Namespace):
     encoder = CharEncoder()
     encoder.fit(PAD_CHAR.join(padded_names))
 
-    logging.info(encoder._char_of_int)
-
     if args.output_dirpath is not None:
         encoder_filepath = Path(args.output_dirpath) / Path("encoder.pkl")
         with open(encoder_filepath, "wb") as out_f:
             pickle.dump(encoder, out_f)
-
 
     encoded_names = list(encoder.encode(pn) for pn in padded_names)
 
@@ -333,12 +333,12 @@ def main(args: argparse.Namespace):
 
             params = ParamGrid.sample_params(nepochs)
 
-            model, val_loss = train_model(
+            _, val_loss = train_model(
                 encoder, encoded_names, start_token, pad_token, params, dev
             )
 
             if val_loss < best_val_loss:
-                logging.info(f"New best params: {params}\tval loss: {val_loss}")
+                logging.info("New best params: %s\tval loss: %s", params, val_loss)
                 best_params = deepcopy(params)
                 best_val_loss = val_loss
 
@@ -353,7 +353,7 @@ def main(args: argparse.Namespace):
         assert best_params is not None
         best_params.nepochs = 100
 
-        model, val_loss = train_model(
+        train_model(
             encoder,
             encoded_names,
             start_token,

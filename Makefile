@@ -29,6 +29,8 @@ help:
 	@echo "make train       Train the greeting model (optional)"
 	@echo "make predict     Sample greetings from the trained model"
 	@echo "make generate    Generate PSFs in $(PSF_FILE)"
+	@echo "make format      Format Python source code"
+	@echo "make lint        Check Python formatting and run Pylint"
 	@echo "make check       Check the lockfile and environment"
 .PHONY: help
 
@@ -74,6 +76,15 @@ generate:
 		--num_generated "$(NUM_GENERATED)" \
 		--output_filepath "$(PSF_FILE)" $(CUDA_OPTION) $(ARGS)
 .PHONY: generate
+
+format:
+	$(UV) run $(UV_BACKEND_OPTIONS) black src
+.PHONY: format
+
+lint:
+	$(UV) run $(UV_BACKEND_OPTIONS) black --check src
+	$(UV) run $(UV_BACKEND_OPTIONS) pylint src/upgen
+.PHONY: lint
 
 check:
 	$(UV) lock --check

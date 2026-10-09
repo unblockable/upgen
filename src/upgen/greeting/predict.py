@@ -1,15 +1,15 @@
 import argparse
 import logging
 import pickle
-import typing
 import sys
-
-from . import train
-from .encode import CharEncoder as CharEncoder
-from .model import SeqModel
-from .train import Params as Params
+import typing
 
 import torch
+
+from . import train
+from .encode import CharEncoder
+from .model import SeqModel
+from .train import Params
 
 
 def load_model(
@@ -48,11 +48,11 @@ def main(args: argparse.Namespace):
         "error": logging.ERROR,
         "critical": logging.CRITICAL,
     }
-    format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
+    log_format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
     logging.basicConfig(
-        level=log_level_of_str[args.log_level], format=format, stream=sys.stderr
+        level=log_level_of_str[args.log_level], format=log_format, stream=sys.stderr
     )
-    logging.info(f"Program arguments:\t{args}")
+    logging.info("Program arguments:\t%s", args)
 
     model, encoder, params, dev = load_model(
         args.model_filepath, args.encoder_filepath, args.best_params_filepath, args.cuda
