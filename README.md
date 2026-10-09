@@ -55,7 +55,8 @@ See the [documentation](docs/README.md) to generate PSFs and to get related info
 
 ## Research citation
 
-You can read more about UPGen in our USENIX Security publication:
+You can read more about UPGen in our
+[USENIX Security publication](https://www.usenix.org/conference/usenixsecurity25/presentation/wails):
 
 ```
 @inproceedings{wails:usenixsec:25,
@@ -69,6 +70,10 @@ You can read more about UPGen in our USENIX Security publication:
   booktitle    = {Proceedings of the 34th USENIX Security Symposium},
   publisher    = {{USENIX} Association},
   year         = {2025},
+  pages        = {763--782},
+  url          = {https://www.usenix.org/conference/usenixsecurity25/presentation/wails},
+  isbn         = {978-1-939133-52-6},
+  address      = {Seattle, WA}
 }
 ```
 
