@@ -13,6 +13,11 @@ model = [
     "torch",
     "tqdm",
 ]
+model-cuda = [
+    "numpy",
+    "torch",
+    "tqdm",
+]
 
 [project.urls]
 Repository = "https://github.com/unblockable/upgen"
@@ -23,14 +28,28 @@ upgen-generate = "upgen.cli:generate"
 upgen-predict = "upgen.cli:predict"
 upgen-train = "upgen.cli:train"
 
+[tool.uv]
+conflicts = [
+    [
+        { extra = "model" },
+        { extra = "model-cuda" },
+    ],
+]
+
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", extra = "model" },
+    { index = "pytorch-cu130", extra = "model-cuda" },
 ]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [build-system]

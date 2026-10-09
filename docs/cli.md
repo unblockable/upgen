@@ -14,6 +14,10 @@ CLI for custom usage.
 uv run --extra model upgen-train [options] input_filepath
 ```
 
+The `model` extra provides CPU-only PyTorch on Linux and MPS support on macOS.
+For CUDA training on Linux, use `--extra model-cuda` and pass `--cuda NUMBER`.
+The two extras cannot be enabled together.
+
 ### Arguments
 
 | Argument               | Description              |

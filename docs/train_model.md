@@ -29,10 +29,17 @@ one `owner/repository` entry per line, by setting `REPOS_FILE` for both commands
 $ make tune
 ```
 
-This step generates `build/best_params.pkl`. To select CUDA device 0 on a
-machine with an NVIDIA GPU, run `make tune ARGS='--cuda 0'`. Without that
-option, training automatically selects Metal Performance Shaders on a
-supported Mac and otherwise uses the CPU.
+This step generates `build/best_params.pkl`. Without additional options,
+training automatically selects Metal Performance Shaders on a supported Mac
+and otherwise uses the CPU.
+
+On Linux with a compatible NVIDIA GPU and driver, install the CUDA dependencies
+and keep the CUDA extra selected for every model command:
+
+```
+$ make sync-model MODEL_EXTRA=model-cuda
+$ make tune MODEL_EXTRA=model-cuda ARGS='--cuda 0'
+```
 
 This command may take a while to complete.
 
@@ -42,9 +49,9 @@ This command may take a while to complete.
 $ make train
 ```
 
-This creates `build/model/encoder.pkl` and `build/model/model.torch`. As with
-tuning, CUDA can be selected with `make train ARGS='--cuda 0'`. Once training
-finishes, the model is ready to generate PSFs.
+This creates `build/model/encoder.pkl` and `build/model/model.torch`. For CUDA
+training, run `make train MODEL_EXTRA=model-cuda ARGS='--cuda 0'`. Once
+training finishes, the model is ready to generate PSFs.
 
 The paths can be customized with the `REPOS_FILE`, `BEST_PARAMS_FILE`, and
 `MODEL_DIR` Make variables.

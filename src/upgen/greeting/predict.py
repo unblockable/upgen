@@ -18,10 +18,7 @@ def load_model(
     best_params_filepath: str,
     cuda: typing.Optional[int],
 ):
-    if cuda is not None:
-        dev = torch.device("cuda:0")
-    else:
-        dev = torch.device("cpu")
+    dev = train.select_device(cuda)
 
     with open(encoder_filepath, "rb") as in_f:
         encoder = pickle.load(in_f)
@@ -36,12 +33,7 @@ def load_model(
         nlayers=params.nlayers,
     ).to(dev)
 
-    if cuda is None:
-        model.load_state_dict(
-            torch.load(model_filepath, map_location=torch.device("cpu"))
-        )
-    else:
-        model.load_state_dict(torch.load(model_filepath))
+    model.load_state_dict(torch.load(model_filepath, map_location=dev))
 
     model.eval()
 

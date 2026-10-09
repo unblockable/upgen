@@ -11,8 +11,8 @@ def model_command(module_name: str) -> Callable[[], None]:
         if error.name in {"numpy", "torch", "tqdm"}:
             raise SystemExit(
                 "Model dependencies are not installed. "
-                "Run this command with `uv run --extra model`, or install them "
-                "with `uv sync --extra model`."
+                "Install them with `uv sync --extra model` for CPU/MPS or "
+                "`uv sync --extra model-cuda` for CUDA."
             ) from error
         raise
 

@@ -30,6 +30,36 @@ HYPERPARAM_TUNE_EPOCHS = 2
 HYPERPARAM_TUNE_TRIES = 50
 
 
+def select_device(cuda: typing.Optional[int]) -> torch.device:
+    if cuda is None:
+        if torch.backends.mps.is_available():
+            return torch.device("mps")
+        return torch.device("cpu")
+
+    if cuda < 0:
+        raise SystemExit("error: --cuda must be a non-negative device number")
+
+    if not torch.cuda.is_available():
+        if torch.version.cuda is None:
+            raise SystemExit(
+                "error: CUDA was requested, but the installed PyTorch build has "
+                "no CUDA support; install the `model-cuda` extra"
+            )
+        raise SystemExit(
+            f"error: PyTorch includes CUDA {torch.version.cuda}, but no CUDA "
+            "device is available; check the NVIDIA driver and GPU access"
+        )
+
+    device_count = torch.cuda.device_count()
+    if cuda >= device_count:
+        raise SystemExit(
+            f"error: CUDA device {cuda} was requested, but only {device_count} "
+            f"device{' is' if device_count == 1 else 's are'} available"
+        )
+
+    return torch.device(f"cuda:{cuda}")
+
+
 def lines_of_file(input_filepath: str) -> list[str]:
     lines = []
 
@@ -253,12 +283,7 @@ def main(args: argparse.Namespace):
     )
     logging.info(f"Program arguments:\t{args}")
 
-    if args.cuda is not None:
-        dev = torch.device(f"cuda:{args.cuda}")
-    elif torch.backends.mps.is_available():
-        dev = torch.device("mps")
-    else:
-        dev = torch.device("cpu")
+    dev = select_device(args.cuda)
 
     logging.info(f"Using device:\t{dev}")
 

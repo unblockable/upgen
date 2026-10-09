@@ -26,3 +26,15 @@ $ uv sync --extra model
 ```
 
    The equivalent Make command is `make sync-model`.
+
+   This selects CPU-only PyTorch on Linux and MPS-capable PyTorch on macOS. On
+   Linux with a compatible NVIDIA GPU and driver, select the CUDA 13.0 build
+   instead:
+
+```
+$ uv sync --extra model-cuda
+```
+
+   The equivalent Make command is
+   `make sync-model MODEL_EXTRA=model-cuda`. The `model` and `model-cuda`
+   extras conflict by design and must not be enabled together.

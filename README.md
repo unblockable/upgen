@@ -36,6 +36,17 @@ $ make generate
 
 Model tuning and training can take a while.
 
+The default `model` dependency set uses Metal automatically on a supported Mac
+and a CPU-only PyTorch build on Linux. On a Linux machine with a compatible
+NVIDIA GPU and driver, select the CUDA dependency set consistently:
+
+```console
+$ make sync-model MODEL_EXTRA=model-cuda
+$ make tune MODEL_EXTRA=model-cuda ARGS='--cuda 0'
+$ make train MODEL_EXTRA=model-cuda ARGS='--cuda 0'
+$ make generate MODEL_EXTRA=model-cuda
+```
+
 By default, the commands write their output files to a `build/` directory:
 
 ```text

@@ -8,6 +8,7 @@ MAKEFLAGS += --no-builtin-rules
 .DEFAULT_GOAL := help
 
 UV ?= uv
+MODEL_EXTRA ?= model
 BUILD_DIR ?= build
 REPOS_FILE ?= $(BUILD_DIR)/repos.txt
 BEST_PARAMS_FILE ?= $(BUILD_DIR)/best_params.pkl
@@ -18,6 +19,7 @@ ARGS ?=
 
 help:
 	@echo "Generated artifacts default to $(BUILD_DIR)/"
+	@echo "Model backend defaults to $(MODEL_EXTRA) (use MODEL_EXTRA=model-cuda for CUDA)"
 	@echo
 	@echo "make sync        Install the base package"
 	@echo "make sync-model  Install the package with model dependencies"
@@ -34,7 +36,7 @@ sync:
 .PHONY: sync
 
 sync-model:
-	$(UV) sync --extra model
+	$(UV) sync --extra "$(MODEL_EXTRA)"
 .PHONY: sync-model
 
 download:
@@ -44,7 +46,7 @@ download:
 
 tune:
 	mkdir -p "$(dir $(BEST_PARAMS_FILE))"
-	$(UV) run --extra model upgen-train \
+	$(UV) run --extra "$(MODEL_EXTRA)" upgen-train \
 		--hyperparam_tune \
 		--output_filepath "$(BEST_PARAMS_FILE)" \
 		"$(REPOS_FILE)" $(ARGS)
@@ -52,14 +54,14 @@ tune:
 
 train:
 	mkdir -p "$(MODEL_DIR)"
-	$(UV) run --extra model upgen-train \
+	$(UV) run --extra "$(MODEL_EXTRA)" upgen-train \
 		--best_params_filepath "$(BEST_PARAMS_FILE)" \
 		--output_dirpath "$(MODEL_DIR)" \
 		"$(REPOS_FILE)" $(ARGS)
 .PHONY: train
 
 predict:
-	$(UV) run --extra model upgen-predict \
+	$(UV) run --extra "$(MODEL_EXTRA)" upgen-predict \
 		"$(BEST_PARAMS_FILE)" \
 		"$(MODEL_DIR)/encoder.pkl" \
 		"$(MODEL_DIR)/model.torch" $(ARGS)
@@ -67,7 +69,7 @@ predict:
 
 generate:
 	mkdir -p "$(dir $(PSF_FILE))"
-	$(UV) run --extra model upgen-generate \
+	$(UV) run --extra "$(MODEL_EXTRA)" upgen-generate \
 		"$(BEST_PARAMS_FILE)" \
 		"$(MODEL_DIR)/encoder.pkl" \
 		"$(MODEL_DIR)/model.torch" \
