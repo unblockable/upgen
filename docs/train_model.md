@@ -1,50 +1,64 @@
-# Model Training
+# Training a greeting string model
 
-Before creating a PSF, we first need a model to generate greeting strings. To
-train the model, follow the following steps.
+To run UPGen, you need a greeting string model. You can train one yourself, or
+download a pretrained model. This document describes how to train a model
+yourself if you want to reproduce the model, provide your own training data, or
+tweak parameters.
 
-1. First go to greeting directory
+Run these commands from the repository root. Generated data and model files
+are kept in the `build/` directory.
+
+In the UPGen USENIX Security publication, we used Github project names to train
+the greeting string model. So, that's what is described below, but it should be
+simple to substitute different sources of training data.
+
+---
+
+1. Download the training data set. The included command retrieves repository
+   names from one hour of [GH Archive](https://www.gharchive.org/) data:
 
 ```
-$ cd src/greeting/
-```
-
-2. Next, generate the input file and place it in the current directory
-   (`greeting/`). The included download script retrieves repository names from
-   one hour of [GH Archive](https://www.gharchive.org/) data:
-
-```
-$ python3 ../../scripts/download_gharchive_repos.py
+$ make download
 ```
 
 By default, the script downloads the archive for January 1, 2015 at 15:00 UTC
-and writes up to 10,000 names to `repos.txt`. Run it with `--help` to see
-options for changing the date, hour, limit, or output file. It uses only the
-Python standard library. You can also use your own script, provided that it
-writes one `owner/repository` entry per line.
+and writes up to 10,000 names to `build/repos.txt`. Pass downloader options
+through `ARGS`, such as `make download ARGS='--date 2025-01-01 --hour 12'`.
 
-3. Then, find the best parameters for the model. Use the following command:
+You can also tune and train from your own input file. The code assumes that it
+contains lines following a `owner/repository` pattern. You can change the
+specified training file by setting `REPOS_FILE` for both following commands.
+
+2. Then, perform a hyperparameter search:
 
 ```
-$ python3 train.py -c 0 -y repos.txt --output_filepath best_params.pkl
+$ make tune
 ```
 
-Note that if you don't have a CUDA GPU, then remove the -c 0 flag. This is only
-for CUDA/NVIDIA GPUs. This step will generate a file called `best_params.pkl`
+This step generates `build/best_params.pkl`. Without additional options,
+training automatically selects Metal Performance Shaders on a supported Mac
+and otherwise uses the CPU.
+
+On Linux with a compatible NVIDIA GPU and driver, select the CUDA backend for
+every command in the workflow:
+
+```
+$ make sync CUDA=0
+$ make download CUDA=0
+$ make tune CUDA=0
+```
 
 This command may take a while to complete.
 
-4. After previous step, create a directory inside greeting/. We name it
-   trained_model/, but you can pick any name.
+3. Finally, train the model:
 
 ```
-$ mkdir trained_model/
+$ make train
 ```
 
-5. Then train the model
+This creates `build/model/encoder.pkl` and `build/model/model.torch`. For CUDA
+training, run `make train CUDA=0`. Once training finishes, the model is ready
+to generate greeting strings.
 
-```
-$ python3 train.py -c 0 -b best_params.pkl -d trained_model/ repos.txt
-```
-
-It will create the model artifacts inside trained_model/ directory. This completes model training and now we are ready to generate PSFs.
+The paths can be customized with the `REPOS_FILE`, `BEST_PARAMS_FILE`, and
+`MODEL_DIR` Make variables.

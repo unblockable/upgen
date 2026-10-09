@@ -1,15 +1,15 @@
 import argparse
 import logging
 import pickle
-import typing
 import sys
-
-from model import SeqModel
-from encode import CharEncoder as CharEncoder
-import train
-from train import Params as Params
+import typing
 
 import torch
+
+from . import train
+from .encode import CharEncoder
+from .model import SeqModel
+from .train import Params
 
 
 def load_model(
@@ -18,10 +18,7 @@ def load_model(
     best_params_filepath: str,
     cuda: typing.Optional[int],
 ):
-    if cuda is not None:
-        dev = torch.device("cuda:0")
-    else:
-        dev = torch.device("cpu")
+    dev = train.select_device(cuda)
 
     with open(encoder_filepath, "rb") as in_f:
         encoder = pickle.load(in_f)
@@ -36,12 +33,7 @@ def load_model(
         nlayers=params.nlayers,
     ).to(dev)
 
-    if cuda is None:
-        model.load_state_dict(
-            torch.load(model_filepath, map_location=torch.device("cpu"))
-        )
-    else:
-        model.load_state_dict(torch.load(model_filepath))
+    model.load_state_dict(torch.load(model_filepath, map_location=dev))
 
     model.eval()
 
@@ -56,11 +48,11 @@ def main(args: argparse.Namespace):
         "error": logging.ERROR,
         "critical": logging.CRITICAL,
     }
-    format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
+    log_format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
     logging.basicConfig(
-        level=log_level_of_str[args.log_level], format=format, stream=sys.stderr
+        level=log_level_of_str[args.log_level], format=log_format, stream=sys.stderr
     )
-    logging.info(f"Program arguments:\t{args}")
+    logging.info("Program arguments:\t%s", args)
 
     model, encoder, params, dev = load_model(
         args.model_filepath, args.encoder_filepath, args.best_params_filepath, args.cuda
@@ -89,6 +81,10 @@ def parse_args():
     parser.add_argument("-n", "--nsamples", default=1, type=int)
     parser.add_argument("-t", "--temp", default=1, type=float)
     return parser.parse_args()
+
+
+def cli():
+    main(parse_args())
 
 
 def predict(
@@ -121,4 +117,4 @@ def predict(
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    cli()

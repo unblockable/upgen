@@ -1,25 +1,37 @@
-# PSF Generation
+# PSF generation
 
-After training the model, follow the following instructions to generate a PSF:
+Before generating a PSF, obtain a greeting string model by following the
+instructions in the [greeting string model guide](greeting_model.md).
 
-1. Go back to src/ directory
-
-```
-$ cd ..
-```
-
-2. Use generate.py to create PSFs
+Run the generator from the repository root:
 
 ```
-$ python generate.py \
-  config.json \
-  greeting/best_params.pkl \
-  greeting/trained_model/encoder.pkl \
-  greeting/trained_model/model.torch \
-  -n 1 \
-  -o name.psf
+$ make generate
 ```
 
-This will create a PSF file in the src/ directory.
+This passes `assets/config.json` to the generator, reads the model artifacts
+under `build/`, and creates `build/upgen.psf`.
 
-To create multiple PSFs, you can adjust the `-n` command line parameter.
+The configuration is an ordinary generator input, so you are free to copy and
+change it to create different protocol distributions. The included
+`assets/config.json` sets all random choices as equally likely. Select another
+configuration with the `CONFIG_FILE` Make variable:
+
+```
+$ make generate CONFIG_FILE=assets/my-config.json
+```
+
+If the environment was installed with the CUDA backend, use
+`make generate CUDA=0`
+to keep that backend selected and run the greeting string model on CUDA device
+0.
+
+To create multiple PSFs or choose a different output path, override the Make
+variables:
+
+```
+$ make generate NUM_GENERATED=5 PSF_FILE=build/examples.psf
+```
+
+Additional generator options can be passed through `ARGS`, for example
+`make generate ARGS='--seed 12345'`.

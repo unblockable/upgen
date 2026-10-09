@@ -1,15 +1,17 @@
-This directory contains the documentation files of UPGen.
+# Documentation
 
----
+To generate a PSF:
 
-## Generation Process
+1. Follow the [installation guide](install.md).
+2. Obtain the required greeting-model artifacts. Downloading a pretrained model
+   will be the recommended path; training your own is optional. See the
+   [greeting string model guide](greeting_model.md).
+3. Follow the [PSF generation guide](generate_psf.md).
 
-Follow the given instructions to generate a PSF:
+Additional references:
 
-1. First, follow the [installation](install.md) guide.
+- [Optional model training](train_model.md)
+- [Command-line reference](cli.md)
 
-2. Second, generate and train the model, whose complete procedure is given in
-   [train_model.md](train_model.md) document.
-
-3. Third, after training the model, create the PSF using
-   [generate_psf.md](generate_psf.md)
+The Make-based workflow stores downloaded data, trained models, and generated
+PSFs under the ignored `build/` directory.

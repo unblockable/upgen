@@ -21,6 +21,32 @@ For installing UPGen, please follow the [installation](docs/install.md) guide.
 
 ---
 
+## Quickstart
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and GNU
+Make, then install UPGen and its dependencies:
+
+```console
+$ make sync
+$ make download-model
+$ make generate
+```
+
+`make download-model` downloads an example, pretrained greeting string model
+from GitHub and extracts it into `build/`. If you wish to train your own model
+instead, see the [greeting string model guide](docs/greeting_model.md) for
+details.
+
+Run `make` to list the available commands. Paths and generation options can be
+overridden when needed, for example:
+
+```console
+$ make generate CONFIG_FILE=assets/config.json \
+    NUM_GENERATED=5 PSF_FILE=build/examples.psf
+```
+
+---
+
 ## Usage
 
 See the [documentation](docs/README.md) to generate PSFs and to get related info.

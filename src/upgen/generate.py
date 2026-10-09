@@ -2,22 +2,29 @@
 
 import argparse
 import copy
+from contextlib import contextmanager
 import json
 import logging
-import typing
 import random
 import struct
 import sys
+import typing
 import uuid
 
-import psf
-import upgen_v1
-from upgen_v1 import HandshakePattern, KeyPattern, set_parameters
+from . import psf, upgen_v1
+from .greeting.predict import load_model, predict
+from .upgen_v1 import HandshakePattern, KeyPattern, set_parameters
 
-sys.path.insert(0, './greeting')
 
-from predict import load_model, predict
-from train import Params as Params
+@contextmanager
+def output_stream(filepath: str) -> typing.Iterator[typing.TextIO]:
+    if filepath == "-":
+        yield sys.stdout
+        return
+
+    with open(filepath, "w", encoding="utf-8") as output_file:
+        yield output_file
+
 
 def cipher_of_security_param(secparam: int) -> psf.Cipher:
     match secparam:
@@ -63,10 +70,10 @@ def formats_id_strs_with_payload_of_handshake(
 
     idx = 0
 
-    for round in handshake_pattern.key_patterns:
+    for handshake_round in handshake_pattern.key_patterns:
         idx += 1
 
-        for key in round:
+        for key in handshake_round:
             match key:
                 case KeyPattern.EPHEMERAL_WITH_OPTIONAL_DATA:
                     retval.append(f"handshake{idx}")
@@ -88,25 +95,25 @@ def instantiate_format_fields(
     format_of_format_id_str = {str(f.name): f for f in formats}
 
     def append_field_to_formats(format_id_strs: list[str], field: psf.Field):
-        formats = [format_of_format_id_str[s] for s in format_id_strs]
-        for format in formats:
-            format.fields.append(field)
+        selected_formats = [format_of_format_id_str[s] for s in format_id_strs]
+        for message_format in selected_formats:
+            message_format.fields.append(field)
 
     handshake_format_id_strs = [
         str(f.name) for f in formats if f.name.startswith("handshake")
     ]
 
     # Add greetings if needed.
-    for format in formats:
-        if format.name == "greeting_client" or format.name == "greeting_server":
+    for message_format in formats:
+        if message_format.name in ("greeting_client", "greeting_server"):
             greeting_field = psf.Field(
                 psf.Identifier("greeting"),
                 psf.PrimitiveArray(psf.NumericType.U8, 0),
             )
-            append_field_to_formats([str(format.name)], greeting_field)
+            append_field_to_formats([str(message_format.name)], greeting_field)
 
     # Start with unencrypted fields..
-    assert all([f in field_order for f in ["unencrypted", "encrypted"]])
+    assert all(name in field_order for name in ("unencrypted", "encrypted"))
     for field in (
         field_order["unencrypted"]
         + ["__end_unencrypted"]
@@ -177,7 +184,6 @@ def instantiate_format_fields(
                 )
             case "nonce":
                 if fields["nonce"]["exists"]:
-                    print(type(cipher))
                     randomness_nbytes = cipher.iv_length_nbytes()
 
                     nonce_field = psf.Field(
@@ -226,8 +232,8 @@ def instantiate_format_fields(
                 pass
             case "__end_encrypted":
 
-                def has_encrypted_headers(format: psf.Format) -> bool:
-                    for field in format.fields:
+                def has_encrypted_headers(message_format: psf.Format) -> bool:
+                    for field in message_format.fields:
                         if str(field.name) in field_order["encrypted"]:
                             return True
                     return False
@@ -240,10 +246,10 @@ def instantiate_format_fields(
                         psf.PrimitiveArray(psf.NumericType.U8, cipher.mac_tag_nbytes()),
                     )
 
-                    for format in formats:
-                        if has_encrypted_headers(format):
+                    for message_format in formats:
+                        if has_encrypted_headers(message_format):
                             append_field_to_formats(
-                                [str(format.name)], header_mac_field
+                                [str(message_format.name)], header_mac_field
                             )
                 else:
                     assert field_order["overall_structure"] == 1
@@ -252,7 +258,7 @@ def instantiate_format_fields(
                 for format_id_str, key_pattern in zip(
                     handshake_format_id_strs, handshake_pattern.key_patterns
                 ):
-                    for idx, key in enumerate(key_pattern):
+                    for key in key_pattern:
                         match key:
                             case (
                                 KeyPattern.EPHEMERAL
@@ -261,8 +267,6 @@ def instantiate_format_fields(
                                 id_str = "ephemeral_key"
                             case KeyPattern.STATIC | KeyPattern.ENCRYPTED_STATIC:
                                 id_str = "static_key"
-
-                        print(key)
 
                         key_field = psf.Field(
                             psf.Identifier(id_str),
@@ -293,33 +297,42 @@ def instantiate_format_fields(
                     handshake_pattern
                 )
 
-                for format in formats:
-                    has_data = str(format.name) in fids_with_data
+                for message_format in formats:
+                    has_data = str(message_format.name) in fids_with_data
 
                     if has_data:
-                        append_field_to_formats([str(format.name)], payload_field)
+                        append_field_to_formats(
+                            [str(message_format.name)], payload_field
+                        )
 
                         if cipher != psf.Cipher.CHACHA20POLY1305:
-                            append_field_to_formats([str(format.name)], padding_field)
+                            append_field_to_formats(
+                                [str(message_format.name)], padding_field
+                            )
 
                     if (
-                        has_encrypted_headers(format)
+                        has_encrypted_headers(message_format)
                         and field_order["overall_structure"] == 1
                     ) or has_data:
-                        append_field_to_formats([str(format.name)], mac_field)
+                        append_field_to_formats([str(message_format.name)], mac_field)
 
             case s:
-                logging.error(f"Received unexpected field: {s}")
+                logging.error("Received unexpected field: %s", s)
                 raise NotImplementedError
 
-    # Now, we need to prune out length fields. If a format has no variable lenght
+    # Now, we need to prune out length fields. If a format has no variable-length
     # fields, it should not have a length field.
-    def has_dynamic_field(format: psf.Format) -> bool:
-        return any(type(f.type_value) == psf.DynamicArray for f in format.fields)
+    def has_dynamic_field(message_format: psf.Format) -> bool:
+        return any(
+            isinstance(field.type_value, psf.DynamicArray)
+            for field in message_format.fields
+        )
 
-    for format in formats:
-        if not has_dynamic_field(format):
-            format.fields = [f for f in format.fields if str(f.name) != "length"]
+    for message_format in formats:
+        if not has_dynamic_field(message_format):
+            message_format.fields = [
+                field for field in message_format.fields if str(field.name) != "length"
+            ]
 
     # And finally, we hack in subprotocol handshakes. The subprotocol packets should
     # appear like ordinary data packets, so we steal them.
@@ -350,7 +363,7 @@ def instantiate_format_fields(
     def subproto_length_of_payload(name: str) -> int:
         fs = name.split("_")
         role = fs[-2]
-        round = int(fs[-1])
+        handshake_round = int(fs[-1])
 
         offset = None
 
@@ -360,7 +373,7 @@ def instantiate_format_fields(
             assert role == "server"
             offset = 1
 
-        idx = round * 2 + offset
+        idx = handshake_round * 2 + offset
 
         return subprotocol_sizes[idx]
 
@@ -369,47 +382,46 @@ def instantiate_format_fields(
 
         if block_size_nbytes is None:
             return 0
-        else:
-            rem = payload_nbytes % block_size_nbytes
-            if rem == 0:
-                return 0
-            else:
-                delta = block_size_nbytes - rem
-                return delta
+
+        rem = payload_nbytes % block_size_nbytes
+        if rem == 0:
+            return 0
+        return block_size_nbytes - rem
 
     if send_encrypted_cert:
-        for format in formats:
-            if format.name == "handshake2":
+        for message_format in formats:
+            if message_format.name == "handshake2":
                 nonce_field = psf.Field(
                     name=psf.Identifier("payload_fake"),
                     type_value=psf.PrimitiveArray(
-                        psf.NumericType.U8, encrypted_cert_nbytes + padding_nbytes(encrypted_cert_nbytes)
+                        psf.NumericType.U8,
+                        encrypted_cert_nbytes + padding_nbytes(encrypted_cert_nbytes),
                     ),
                 )
 
                 append_field_to_formats(["handshake2"], nonce_field)
 
-    for format in formats:
-        if format.name.startswith("handshake_subprotocol"):
-            format.fields = copy.deepcopy(data_format.fields)
+    for message_format in formats:
+        if message_format.name.startswith("handshake_subprotocol"):
+            message_format.fields = copy.deepcopy(data_format.fields)
             # Now we need to set the lengths correctly.
-            for field in format.fields:
+            for field in message_format.fields:
                 if (
                     field.name == "payload_fake"
                     and field.type_value == psf.PrimitiveArray(psf.NumericType.U8, -1)
                 ):
-                    lp = subproto_length_of_payload(format.name)
+                    lp = subproto_length_of_payload(message_format.name)
                     lp += padding_nbytes(lp)
                     field.type_value = psf.PrimitiveArray(psf.NumericType.U8, lp)
 
     # Finally, take a pass to determine the right length field.
-    for format in formats:
-        if format.name.startswith("handshake_subprotocol"):
+    for message_format in formats:
+        if message_format.name.startswith("handshake_subprotocol"):
             assert lp is not None
 
-            for field in format.fields:
+            for field in message_format.fields:
                 if field.name == "length":
-                    lp = subproto_length_of_payload(format.name)
+                    lp = subproto_length_of_payload(message_format.name)
                     lp += padding_nbytes(lp)
                     field.name = f"length_{lp + cipher.mac_tag_nbytes()}"
                     field.type_value = psf.PrimitiveArray(
@@ -427,14 +439,14 @@ def semantics_of_formats(
     cipher = protocol_settings.cipher
     greeting_str = gen_greeting_fn()
 
-    for format in formats:
-        for field in format.fields:
+    for message_format in formats:
+        for field in message_format.fields:
             field_semantic: typing.Optional[psf.FieldSemantic] = None
 
             match str(field.name):
                 case "extra":
                     assert (
-                        type(field.type_value) == psf.PrimitiveArray
+                        isinstance(field.type_value, psf.PrimitiveArray)
                         and field.type_value.primitive_type == psf.NumericType.U8
                     )
                     nbytes = field.type_value.nelems
@@ -445,14 +457,14 @@ def semantics_of_formats(
                     field_semantic = psf.SemanticValue.PADDING_LENGTH
                 case "nonce":
                     assert (
-                        type(field.type_value) == psf.PrimitiveArray
+                        isinstance(field.type_value, psf.PrimitiveArray)
                         and field.type_value.primitive_type == psf.NumericType.U8
                     )
                     nbytes = field.type_value.nelems
                     field_semantic = psf.RandomSemantic(nbytes)
                 case "reserved":
                     assert (
-                        type(field.type_value) == psf.PrimitiveArray
+                        isinstance(field.type_value, psf.PrimitiveArray)
                         and field.type_value.primitive_type == psf.NumericType.U8
                     )
                     nbytes = field.type_value.nelems
@@ -465,7 +477,7 @@ def semantics_of_formats(
                 case "payload":
                     field_semantic = psf.SemanticValue.PAYLOAD
                 case "type":
-                    is_handshake = str(format.name).startswith("handshake")
+                    is_handshake = str(message_format.name).startswith("handshake")
 
                     # The types are
                     # Normal:
@@ -480,7 +492,7 @@ def semantics_of_formats(
                     if is_handshake:
                         type_offset = 0
                     else:
-                        assert str(format.name) == "data"
+                        assert str(message_format.name) == "data"
                         type_offset = 1
 
                     if not protocol_settings.fields["type"]["normal_types_first"]:
@@ -498,7 +510,7 @@ def semantics_of_formats(
 
                 case "version":
                     assert (
-                        type(field.type_value) == psf.PrimitiveArray
+                        isinstance(field.type_value, psf.PrimitiveArray)
                         and field.type_value.primitive_type == psf.NumericType.U8
                     )
 
@@ -525,7 +537,7 @@ def semantics_of_formats(
                     )
                 case "greeting":
                     assert (
-                        type(field.type_value) == psf.PrimitiveArray
+                        isinstance(field.type_value, psf.PrimitiveArray)
                         and field.type_value.primitive_type == psf.NumericType.U8
                     )
 
@@ -537,7 +549,7 @@ def semantics_of_formats(
                 case "padding_length_fake" | "payload_fake":
                     # Same logic as nonce.
                     assert (
-                        type(field.type_value) == psf.PrimitiveArray
+                        isinstance(field.type_value, psf.PrimitiveArray)
                         and field.type_value.primitive_type == psf.NumericType.U8
                     )
                     nbytes = field.type_value.nelems
@@ -560,13 +572,13 @@ def semantics_of_formats(
                             value=psf.HexLiteral("0x" + length_bytes.hex())
                         )
                     else:
-                        logging.error(f"Received unexpected field: {s}")
+                        logging.error("Received unexpected field: %s", s)
                         raise NotImplementedError
 
             if field_semantic is not None:
                 retval.append(
                     psf.SemanticBinding(
-                        format_id=format.name,
+                        format_id=message_format.name,
                         field_id=field.name,
                         semantic=field_semantic,
                     )
@@ -580,14 +592,14 @@ def sequence_specifier_of_formats(
 ) -> list[psf.SequenceSpecifier]:
     retval = []
 
-    for format in formats:
-        name = str(format.name)
+    for message_format in formats:
+        name = str(message_format.name)
         if name == "greeting_client":
             retval.append(
                 psf.SequenceSpecifier(
                     role=psf.Role.CLIENT,
                     phase=psf.Phase.HANDSHAKE,
-                    format_id=format.name,
+                    format_id=message_format.name,
                 )
             )
         elif name == "greeting_server":
@@ -595,24 +607,27 @@ def sequence_specifier_of_formats(
                 psf.SequenceSpecifier(
                     role=psf.Role.SERVER,
                     phase=psf.Phase.HANDSHAKE,
-                    format_id=format.name,
+                    format_id=message_format.name,
                 )
             )
         elif name.startswith("handshake_subprotocol"):
-            subprotocol_num = int(name.split("_")[-1])
-            role = psf.Role.of_str(name.split("_")[-2])
+            role = psf.Role.of_str(name.rsplit("_", maxsplit=2)[-2])
 
             retval.append(
                 psf.SequenceSpecifier(
-                    role=role, phase=psf.Phase.HANDSHAKE, format_id=format.name
+                    role=role,
+                    phase=psf.Phase.HANDSHAKE,
+                    format_id=message_format.name,
                 )
             )
         elif name.startswith("handshake"):
-            msg_num = int(name.split("handshake")[-1])
+            msg_num = int(name.rsplit("handshake", maxsplit=1)[-1])
             role = psf.Role.CLIENT if msg_num % 2 == 1 else psf.Role.SERVER
             retval.append(
                 psf.SequenceSpecifier(
-                    role=role, phase=psf.Phase.HANDSHAKE, format_id=format.name
+                    role=role,
+                    phase=psf.Phase.HANDSHAKE,
+                    format_id=message_format.name,
                 )
             )
         else:
@@ -621,7 +636,9 @@ def sequence_specifier_of_formats(
             for role in (psf.Role.CLIENT, psf.Role.SERVER):
                 retval.append(
                     psf.SequenceSpecifier(
-                        role=role, phase=psf.Phase.DATA, format_id=format.name
+                        role=role,
+                        phase=psf.Phase.DATA,
+                        format_id=message_format.name,
                     )
                 )
 
@@ -635,11 +652,7 @@ def make_encryption_directives(
     retval: list[psf.EncryptionDirectives] = []
 
     def encrypted(format_id_str, field_id_str):
-        if (
-            field_id_str == "padding_length"
-            or field_id_str == "payload"
-            or field_id_str == "padding"
-        ):
+        if field_id_str in ("padding_length", "payload", "padding"):
             return True
 
         if format_id_str == "handshake3" and field_id_str == "static_key":
@@ -650,15 +663,15 @@ def make_encryption_directives(
 
         return False
 
-    for format in formats:
+    for message_format in formats:
         efds = []
 
-        for field in format.fields:
-            if encrypted(format.name, field.name):
+        for field in message_format.fields:
+            if encrypted(message_format.name, field.name):
                 efds.append(psf.EncryptionFieldDirective(field.name, field.name, None))
 
         if len(efds) > 0:
-            efb = psf.EncryptionFormatBinding(format.name, format.name)
+            efb = psf.EncryptionFormatBinding(message_format.name, message_format.name)
             retval.append(psf.EncryptionDirectives(efb, efds))
 
     return retval
@@ -668,7 +681,7 @@ def generate_psf(
     protocol_settings: upgen_v1.ProtocolSettings,
     gen_greeting_fn: typing.Callable[[], str],
 ) -> psf.ProtocolSpecificationFile:
-    logging.info(f"Sampled protocol settings:\n{protocol_settings}")
+    logging.info("Sampled protocol settings:\n%s", protocol_settings)
 
     cipher = protocol_settings.cipher
 
@@ -703,7 +716,9 @@ def generate_psf(
     )
 
     options = psf.OptionsSegment(
-        separate_length_field=psf.SeparateLengthFieldSetting(protocol_settings.separate_length_fields)
+        separate_length_field=psf.SeparateLengthFieldSetting(
+            protocol_settings.separate_length_fields
+        )
     )
 
     p = psf.ProtocolSpecificationFile(
@@ -725,13 +740,13 @@ def main(args: argparse.Namespace):
         "error": logging.ERROR,
         "critical": logging.CRITICAL,
     }
-    format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
+    log_format = "[%(asctime)s %(name)s %(levelname)s] %(message)s"
     logging.basicConfig(
-        level=log_level_of_str[args.log_level], format=format, stream=sys.stderr
+        level=log_level_of_str[args.log_level], format=log_format, stream=sys.stderr
     )
-    logging.info(f"Program arguments:\t{args}")
+    logging.info("Program arguments:\t%s", args)
 
-    with open(args.config_filepath, 'r') as in_f:
+    with open(args.config_filepath, "r", encoding="utf-8") as in_f:
         config = json.load(in_f)
 
     set_parameters(config["parameters"])
@@ -739,41 +754,40 @@ def main(args: argparse.Namespace):
     if args.seed is not None:
         random.seed(args.seed)
 
-    if args.output_filepath == "-":
-        out_f = sys.stdout
-    else:
-        out_f = open(args.output_filepath, "w")
-
     model, encoder, params, dev = load_model(
-        args.model_filepath, args.encoder_filepath, args.best_params_filepath, None
+        args.model_filepath,
+        args.encoder_filepath,
+        args.best_params_filepath,
+        args.cuda,
     )
 
-    def gen_greeting():
+    def model_greeting():
         return predict(model, encoder, params, dev, 1, args.greeting_string_temp)[0]
+
+    gen_greeting = model_greeting
 
     if args.best:
         sample = upgen_v1.best_protocol_settings
     elif args.worst:
         sample = upgen_v1.worst_protocol_settings
 
-        def gen_greeting():
-            return "he"*50
+        def fixed_greeting():
+            return "he" * 50
 
+        gen_greeting = fixed_greeting
     else:
         sample = upgen_v1.sample_protocol_settings
 
-    for idx in range(args.num_generated):
+    with output_stream(args.output_filepath) as out_f:
+        for idx in range(args.num_generated):
+            logging.info("Completed %s PSFs.", idx + 1)
 
-        logging.info(f"Completed {idx+1} PSFs.")
+            protocol_settings = sample()
+            generated_psf = generate_psf(protocol_settings, gen_greeting)
+            print(generated_psf, file=out_f)
 
-        protocol_settings = sample()
-        p = generate_psf(protocol_settings, gen_greeting)
-        print(p, file=out_f)
-
-        if args.num_generated > 1:
-            print(bytes.fromhex("1E").decode(), file=out_f)
-
-    out_f.close()
+            if args.num_generated > 1:
+                print(bytes.fromhex("1E").decode(), file=out_f)
 
 
 def parse_args():
@@ -785,6 +799,7 @@ def parse_args():
         default="info",
     )
     parser.add_argument("-s", "--seed", type=int, default=None)
+    parser.add_argument("-c", "--cuda", type=int)
     parser.add_argument("-o", "--output_filepath", type=str, default="-")
     parser.add_argument("-t", "--greeting_string_temp", type=float, default=0.9)
     parser.add_argument("-n", "--num_generated", type=int, default=1)
@@ -792,7 +807,9 @@ def parse_args():
     parser.add_argument("-b", "--best", action="store_true")
     parser.add_argument("-w", "--worst", action="store_true")
 
-    parser.add_argument("config_filepath")
+    parser.add_argument(
+        "config_filepath", help="protocol generation configuration JSON file"
+    )
     parser.add_argument("best_params_filepath")
     parser.add_argument("encoder_filepath")
     parser.add_argument("model_filepath")
@@ -800,5 +817,9 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def cli():
     main(parse_args())
+
+
+if __name__ == "__main__":
+    cli()

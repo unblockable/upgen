@@ -1,0 +1,88 @@
+[project]
+name = "upgen"
+version = "0.1.0"
+description = "Generate randomized Protocol Specification Files for censorship circumvention."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = [
+    "numpy",
+    "torch",
+    "tqdm",
+]
+
+[dependency-groups]
+# These groups select a wheel source for the unconditional torch dependency.
+cpu-mps = ["torch"]
+cuda = ["torch"]
+dev = [
+    "black",
+    "pylint",
+]
+
+[project.urls]
+Repository = "https://github.com/unblockable/upgen"
+
+[project.scripts]
+upgen-download-repos = "upgen.download_repos:main"
+upgen-generate = "upgen.cli:generate"
+upgen-predict = "upgen.cli:predict"
+upgen-train = "upgen.cli:train"
+
+[tool.uv]
+default-groups = ["cpu-mps", "dev"]
+conflicts = [
+    [
+        { group = "cpu-mps" },
+        { group = "cuda" },
+    ],
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", group = "cpu-mps" },
+    { index = "pytorch-cu130", group = "cuda" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.pylint.main]
+py-version = "3.10"
+
+[tool.pylint."messages control"]
+disable = [
+    "duplicate-code",
+    "global-statement",
+    "line-too-long",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "protected-access",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-instance-attributes",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-return-statements",
+    "too-many-statements",
+]
+
+[tool.pylint.basic]
+typealias-rgx = "[A-Z][A-Za-z0-9]*"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"

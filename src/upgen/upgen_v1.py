@@ -1,25 +1,28 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from enum import Enum, auto
-import json
 import math
 import pprint
 import random
 import typing
 
-from psf import Cipher
+from .psf import Cipher
 
 PARAMETERS = None
+
 
 def set_parameters(parameters):
     global PARAMETERS
     PARAMETERS = parameters
 
+
 def sample_from_parameters(k):
-    val_prob_pairs_of_k = list(map(lambda k: (k["value"], k["probability"]),
-                                   PARAMETERS["probabilities"][k]))
+    val_prob_pairs_of_k = list(
+        map(lambda k: (k["value"], k["probability"]), PARAMETERS["probabilities"][k])
+    )
 
     return choice_probs(val_prob_pairs_of_k)
+
 
 def range_of_parameters(k):
     minval = PARAMETERS["ranges"][k]["min"]
@@ -30,32 +33,33 @@ def range_of_parameters(k):
 def cipher_of_string(value: str):
     if value == "AES256GCM":
         return Cipher.AES256GCM
-    elif value == "CHACHA20POLY1305":
+    if value == "CHACHA20POLY1305":
         return Cipher.CHACHA20POLY1305
-    else:
-        raise NotImplementedError
+    raise NotImplementedError
+
 
 # choose security parameter
 def choose_security_parameter():
     return sample_from_parameters("sec_param")
 
+
 def choose_cipher(secparam: int) -> Cipher:
-    if (secparam == 128):
+    if secparam == 128:
         return Cipher.AES128GCM
-    elif (secparam == 256):
+    if secparam == 256:
         return cipher_of_string(sample_from_parameters("256_bit_cipher"))
-    else:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 def choose_subprotocol_nrounds(handshake_pattern):
     # flatten handshake pattern to search for optimistic data
-    flat_handshake_pattern = [field for msg in handshake_pattern.key_patterns for field in msg]
+    flat_handshake_pattern = [
+        field for msg in handshake_pattern.key_patterns for field in msg
+    ]
     # potentially choose subprotocol rounds only if no optimistic data
-    if (KeyPattern.EPHEMERAL_WITH_OPTIONAL_DATA not in flat_handshake_pattern):
+    if KeyPattern.EPHEMERAL_WITH_OPTIONAL_DATA not in flat_handshake_pattern:
         return sample_from_parameters("subprotocol_nrounds")
-    else:
-        return 0
+    return 0
 
 
 def choose_subprotocol_sizes(subprotocol_nrounds: int):
@@ -79,10 +83,13 @@ def choice_probs(val_prob_pairs):
         if r <= cumprob:
             return val
 
+    # Guard against a tiny floating-point gap below 1.0.
+    return val_prob_pairs[-1][0]
+
 
 # choose parameters of type field
 def choose_type_field():
-    type_field: typing.Any = dict()
+    type_field: typing.Any = {}
     # Is type field encrypted?
     type_field["encrypted"] = sample_from_parameters("type_field_encrypted")
     # Choose number of type numbers
@@ -97,7 +104,7 @@ def choose_type_field():
 
 # choose parameters of length field
 def choose_length_field():
-    length_field = dict()
+    length_field = {}
     length_field["encrypted"] = False
     length_field["length"] = sample_from_parameters("length_field_nbytes")
     length_field["mac_covered"] = sample_from_parameters("length_field_covered_by_mac")
@@ -107,7 +114,7 @@ def choose_length_field():
 
 # choose parameters of payload (i.e. message) padding
 def choose_payload_padding_field(length_field):
-    payload_padding_field: typing.Any = dict()
+    payload_padding_field: typing.Any = {}
     payload_padding_field["encrypted"] = True
     # Choose length
     if length_field["length"] == 2:
@@ -120,7 +127,7 @@ def choose_payload_padding_field(length_field):
 
 # choose parameters of version field
 def choose_version_field():
-    version_field = dict()
+    version_field = {}
     version_field["length"] = sample_from_parameters("version_field_nbytes")
     version_field["in_handshake"] = sample_from_parameters("version_field_in_handshake")
     version_field["encrypted"] = sample_from_parameters("version_field_encrypted")
@@ -132,8 +139,8 @@ def choose_version_field():
 
 
 # choose parameters of randomness field
-def choose_randomness_field(secparam):
-    randomness_field = dict()
+def choose_randomness_field(_secparam):
+    randomness_field = {}
     randomness_field["encrypted"] = False
     randomness_field["exists"] = sample_from_parameters("has_nonce")
 
@@ -142,21 +149,21 @@ def choose_randomness_field(secparam):
 
 # choose parameters of randomness field
 def choose_extra_field(type_field, version_field):
-    extra_field: typing.Any = dict()
+    extra_field: typing.Any = {}
     extra_field["encrypted"] = True
     extra_field["handshake_length"] = 0
     extra_field["data_length"] = 0
     if type_field["encrypted"] or version_field["encrypted"]:
-        extra_field["handshake_length"] =\
-            sample_from_parameters("extra_field_nbytes_handshake")
-        extra_field["data_length"] =\
-            sample_from_parameters("extra_field_nbytes_data")
+        extra_field["handshake_length"] = sample_from_parameters(
+            "extra_field_nbytes_handshake"
+        )
+        extra_field["data_length"] = sample_from_parameters("extra_field_nbytes_data")
 
     return extra_field
 
 
 def choose_reserved_field():
-    reserved_field = dict()
+    reserved_field = {}
     reserved_field["encrypted"] = True
     reserved_field["length"] = sample_from_parameters("reserved_field_length_nbytes")
 
@@ -164,7 +171,7 @@ def choose_reserved_field():
 
 
 def choose_field_order(fields):
-    field_order: dict[str, typing.Any] = dict()
+    field_order: dict[str, typing.Any] = {}
     field_order["overall_structure"] = sample_from_parameters("overall_structure")
     encrypted_fields = []
     unencrypted_fields = []
@@ -205,14 +212,13 @@ class KeyPattern(Enum):
     def __repr__(self):
         if self == KeyPattern.EPHEMERAL:
             return "EPHEMERAL"
-        elif self == KeyPattern.EPHEMERAL_WITH_OPTIONAL_DATA:
+        if self == KeyPattern.EPHEMERAL_WITH_OPTIONAL_DATA:
             return "EPHEMERAL_WITH_OPTIONAL_DATA"
-        elif self == KeyPattern.STATIC:
+        if self == KeyPattern.STATIC:
             return "STATIC"
-        elif self == KeyPattern.ENCRYPTED_STATIC:
+        if self == KeyPattern.ENCRYPTED_STATIC:
             return "ENCRYPTED_STATIC"
-        else:
-            raise NotImplementedError()
+        raise NotImplementedError()
 
 
 @dataclass
@@ -284,39 +290,25 @@ def choose_handshake_pattern() -> HandshakePattern:
         ],
     ]
 
-    choices = (
-        pattern1,
-        pattern2,
-        pattern3,
-        pattern4,
-        pattern5,
-        pattern6,
-        pattern7,
-        pattern8,
-    )
-
     def pattern_of_string(value: str):
-        if value == "pattern1":
-            return pattern1
-        elif value == "pattern2":
-            return pattern2
-        elif value == "pattern3":
-            return pattern3
-        elif value == "pattern4":
-            return pattern4
-        elif value == "pattern5":
-            return pattern5
-        elif value == "pattern6":
-            return pattern6
-        elif value == "pattern7":
-            return pattern7
-        elif value == "pattern8":
-            return pattern8
-        else:
-            raise NotImplementedError
+        patterns = {
+            "pattern1": pattern1,
+            "pattern2": pattern2,
+            "pattern3": pattern3,
+            "pattern4": pattern4,
+            "pattern5": pattern5,
+            "pattern6": pattern6,
+            "pattern7": pattern7,
+            "pattern8": pattern8,
+        }
+        try:
+            return patterns[value]
+        except KeyError as error:
+            raise NotImplementedError from error
 
-    choice: list[list[KeyPattern]] =\
-        pattern_of_string(sample_from_parameters("key_pattern"))
+    choice: list[list[KeyPattern]] = pattern_of_string(
+        sample_from_parameters("key_pattern")
+    )
 
     return HandshakePattern(key_patterns=choice)
 
@@ -388,7 +380,113 @@ def sample_protocol_settings() -> ProtocolSettings:
         subprotocol_nrounds=subprotocol_nrounds,
         subprotocol_sizes=choose_subprotocol_sizes(subprotocol_nrounds),
         send_encrypted_cert=sample_from_parameters("send_encrypted_cert"),
-        encrypted_cert_nbytes=random.choice(range_of_parameters("encrypted_cert_nbytes")),
+        encrypted_cert_nbytes=random.choice(
+            range_of_parameters("encrypted_cert_nbytes")
+        ),
         separate_length_fields=sample_from_parameters("separate_length_field"),
         reversed_greeting=reversed_greeting,
+    )
+
+
+def worst_protocol_settings() -> ProtocolSettings:
+    fields = {
+        "type": choose_type_field(),
+        "length": {
+            "encrypted": False,
+            "length": 4,
+            "mac_covered": False,
+        },
+        "padding_length": {"length": 4},
+        "version": {
+            "length": 2,
+            "in_handshake": True,
+            "encrypted": False,
+            "major_val": 0x1,
+            "minor_val": 0x0,
+        },
+        "nonce": {
+            "encrypted": False,
+            "exists": True,
+        },
+        "extra": {
+            "encrypted": True,
+            "handshake_length": 2,
+            "data_length": 2,
+        },
+        "reserved": {"length": 4},
+    }
+
+    handshake_pattern = HandshakePattern(
+        key_patterns=[
+            [KeyPattern.EPHEMERAL],
+            [KeyPattern.EPHEMERAL, KeyPattern.STATIC],
+            [KeyPattern.ENCRYPTED_STATIC],
+        ]
+    )
+
+    return ProtocolSettings(
+        secparam=256,
+        fields=fields,
+        field_order=choose_field_order(fields),
+        handshake_pattern=handshake_pattern,
+        key_encoding="PEM",
+        cipher=Cipher.AES256GCM,
+        greeting=True,
+        subprotocol_nrounds=2,
+        subprotocol_sizes=[255, 255, 255, 255],
+        send_encrypted_cert=True,
+        encrypted_cert_nbytes=2047,
+        separate_length_fields=True,
+        reversed_greeting=False,
+    )
+
+
+def best_protocol_settings() -> ProtocolSettings:
+    fields = {
+        "type": choose_type_field(),
+        "length": {
+            "encrypted": False,
+            "length": 2,
+            "mac_covered": False,
+        },
+        "padding_length": {"length": 2},
+        "version": {
+            "length": 1,
+            "in_handshake": False,
+            "encrypted": False,
+            "major_val": 0x1,
+        },
+        "nonce": {
+            "encrypted": False,
+            "exists": False,
+        },
+        "extra": {
+            "encrypted": True,
+            "handshake_length": 0,
+            "data_length": 0,
+        },
+        "reserved": {"length": 0},
+    }
+
+    handshake_pattern = HandshakePattern(
+        key_patterns=[
+            [KeyPattern.EPHEMERAL],
+            [KeyPattern.EPHEMERAL],
+        ]
+    )
+
+    return ProtocolSettings(
+        secparam=256,
+        fields=fields,
+        field_order=choose_field_order(fields),
+        handshake_pattern=handshake_pattern,
+        key_encoding="RAW",
+        cipher=Cipher.CHACHA20POLY1305,
+        greeting=False,
+        subprotocol_nrounds=0,
+        subprotocol_sizes=[],
+        send_encrypted_cert=False,
+        encrypted_cert_nbytes=0,
+        separate_length_fields=False,
+        reversed_greeting=False,
     )
