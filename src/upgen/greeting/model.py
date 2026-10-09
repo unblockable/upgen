@@ -8,7 +8,7 @@ import torch
 import torch.nn
 from torch.distributions import Categorical
 
-from encode import one_hot
+from .encode import one_hot
 
 
 class ModelType(Enum):

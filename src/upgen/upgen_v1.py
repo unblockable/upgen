@@ -7,7 +7,7 @@ import pprint
 import random
 import typing
 
-from psf import Cipher
+from .psf import Cipher
 
 PARAMETERS = None
 

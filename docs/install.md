@@ -2,28 +2,27 @@
 
 ## Procedure
 
-1. Clone the repo:
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then
+   clone the repository:
 
 ```
 $ git clone https://github.com/unblockable/upgen.git
+$ cd upgen
 ```
 
-2. Create a virtual environment and enter it (optional, recommended):
+2. Create the project environment and install the locked dependencies:
 
 ```
-$ python -m venv venv
-$ source venv/bin/activate 
+$ uv sync
 ```
 
-3. Go to upgen repo and install all the required dependencies:
+   The equivalent Make command is `make sync`.
+
+   This installs the basic UPGen source. To train and use greeting string
+   language models, include the optional model dependencies:
 
 ```
-(venv) $ cd upgen
-(venv) $ pip install -r requirements.txt
+$ uv sync --extra model
 ```
 
-4. Verify you can run the scripts:
-
-```
-(venv) $ cd src && python generate.py --help
-```
+   The equivalent Make command is `make sync-model`.

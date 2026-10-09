@@ -19,8 +19,8 @@ import torch.nn
 
 from tqdm import tqdm
 
-from encode import CharEncoder, one_hot
-from model import SeqModel, ModelType
+from .encode import CharEncoder, one_hot
+from .model import ModelType, SeqModel
 
 START_CHAR = "^"
 PAD_CHAR = " "
@@ -253,15 +253,14 @@ def main(args: argparse.Namespace):
     )
     logging.info(f"Program arguments:\t{args}")
 
-    dev = None
-
     if args.cuda is not None:
-        dev = torch.device("cuda:0")
-    else:
-        #dev = torch.device("cpu")
+        dev = torch.device(f"cuda:{args.cuda}")
+    elif torch.backends.mps.is_available():
         dev = torch.device("mps")
+    else:
+        dev = torch.device("cpu")
 
-    assert dev is not None
+    logging.info(f"Using device:\t{dev}")
 
     names = names_of_lines(lines_of_file(args.input_filepath))
 
@@ -357,5 +356,9 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def cli():
     main(parse_args())
+
+
+if __name__ == "__main__":
+    cli()

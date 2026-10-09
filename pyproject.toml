@@ -1,0 +1,38 @@
+[project]
+name = "upgen"
+version = "0.1.0"
+description = "Generate randomized Protocol Specification Files for censorship circumvention."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.optional-dependencies]
+model = [
+    "numpy",
+    "torch",
+    "tqdm",
+]
+
+[project.urls]
+Repository = "https://github.com/unblockable/upgen"
+
+[project.scripts]
+upgen-download-repos = "upgen.download_repos:main"
+upgen-generate = "upgen.cli:generate"
+upgen-predict = "upgen.cli:predict"
+upgen-train = "upgen.cli:train"
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"

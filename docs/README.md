@@ -13,3 +13,6 @@ Follow the given instructions to generate a PSF:
 
 3. Third, after training the model, create the PSF using
    [generate_psf.md](generate_psf.md)
+
+The Make-based workflow stores downloaded data, trained models, and generated
+PSFs under the ignored `build/` directory.

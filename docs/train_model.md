@@ -1,52 +1,50 @@
 # Model Training
 
-Before creating a PSF, we first need a model to generate greeting strings. To
-train the model, follow the following steps.
+Before creating a PSF, we first need a model to generate greeting strings.
+Run these commands from the repository root. Generated data and model artifacts
+are kept under the ignored `build/` directory.
 
-1. First go to greeting directory
-
-```
-$ cd src/greeting/
-```
-
-2. Next, generate the input file and place it in the current directory
-   (`greeting/`). The included download script retrieves repository names from
-   one hour of [GH Archive](https://www.gharchive.org/) data:
+First, install the optional NumPy, PyTorch, and tqdm dependencies:
 
 ```
-$ python3 ../../scripts/download_gharchive_repos.py
+$ make sync-model
+```
+
+1. Generate the training input. The included command retrieves repository
+   names from one hour of [GH Archive](https://www.gharchive.org/) data:
+
+```
+$ make download
 ```
 
 By default, the script downloads the archive for January 1, 2015 at 15:00 UTC
-and writes up to 10,000 names to `repos.txt`. Run it with `--help` to see
-options for changing the date, hour, limit, or output file. It uses only the
-Python standard library. You can also use your own script, provided that it
-writes one `owner/repository` entry per line.
+and writes up to 10,000 names to `build/repos.txt`. Pass downloader options
+through `ARGS`, such as `make download ARGS='--date 2025-01-01 --hour 12'`.
+You can also tune and train from your own input file, provided that it contains
+one `owner/repository` entry per line, by setting `REPOS_FILE` for both commands.
 
-3. Then, find the best parameters for the model. Use the following command:
+2. Find the best parameters for the model:
 
 ```
-$ python3 train.py -c 0 -y repos.txt --output_filepath best_params.pkl
+$ make tune
 ```
 
-Note that if you don't have a CUDA GPU, then remove the -c 0 flag. This is only
-for CUDA/NVIDIA GPUs. This step will generate a file called `best_params.pkl`
+This step generates `build/best_params.pkl`. To select CUDA device 0 on a
+machine with an NVIDIA GPU, run `make tune ARGS='--cuda 0'`. Without that
+option, training automatically selects Metal Performance Shaders on a
+supported Mac and otherwise uses the CPU.
 
 This command may take a while to complete.
 
-4. After previous step, create a directory inside greeting/. We name it
-   trained_model/, but you can pick any name.
+3. Train the model:
 
 ```
-$ mkdir trained_model/
+$ make train
 ```
 
-5. Then train the model
+This creates `build/model/encoder.pkl` and `build/model/model.torch`. As with
+tuning, CUDA can be selected with `make train ARGS='--cuda 0'`. Once training
+finishes, the model is ready to generate PSFs.
 
-```
-$ python3 train.py -c 0 -b best_params.pkl -d trained_model/ repos.txt
-```
-
-It will create the model artifacts inside trained_model/ directory. To check
-sample model artifacts, please check the [model_samples](model_samples/)
-directory. This completes model training and now we are ready to generate PSFs.
+The paths can be customized with the `REPOS_FILE`, `BEST_PARAMS_FILE`, and
+`MODEL_DIR` Make variables.

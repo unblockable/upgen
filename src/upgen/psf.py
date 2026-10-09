@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 import typing
-import util
+from . import util
 
 
 def auto_str_repr(cls):

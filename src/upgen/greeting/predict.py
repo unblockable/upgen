@@ -4,10 +4,10 @@ import pickle
 import typing
 import sys
 
-from model import SeqModel
-from encode import CharEncoder as CharEncoder
-import train
-from train import Params as Params
+from . import train
+from .encode import CharEncoder as CharEncoder
+from .model import SeqModel
+from .train import Params as Params
 
 import torch
 
@@ -91,6 +91,10 @@ def parse_args():
     return parser.parse_args()
 
 
+def cli():
+    main(parse_args())
+
+
 def predict(
     model: SeqModel,
     encoder: CharEncoder,
@@ -121,4 +125,4 @@ def predict(
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    cli()

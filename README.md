@@ -21,6 +21,42 @@ For installing UPGen, please follow the [installation](docs/install.md) guide.
 
 ---
 
+## Quickstart
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and GNU
+Make, then run the complete generation workflow from the repository root:
+
+```console
+$ make sync-model
+$ make download
+$ make tune
+$ make train
+$ make generate
+```
+
+Model tuning and training can take a while.
+
+By default, the commands write their output files to a `build/` directory:
+
+```text
+build/
+├── repos.txt
+├── best_params.pkl
+├── model/
+│   ├── encoder.pkl
+│   └── model.torch
+└── upgen.psf
+```
+
+Run `make` to list the available commands. Paths and generation options can be
+overridden when needed, for example:
+
+```console
+$ make generate NUM_GENERATED=5 PSF_FILE=build/examples.psf
+```
+
+---
+
 ## Usage
 
 See the [documentation](docs/README.md) to generate PSFs and to get related info.

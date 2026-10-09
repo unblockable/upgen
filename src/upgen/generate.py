@@ -4,20 +4,17 @@ import argparse
 import copy
 import json
 import logging
+from pathlib import Path
 import typing
 import random
 import struct
 import sys
 import uuid
 
-import psf
-import upgen_v1
-from upgen_v1 import HandshakePattern, KeyPattern, set_parameters
-
-sys.path.insert(0, './greeting')
-
-from predict import load_model, predict
-from train import Params as Params
+from . import psf, upgen_v1
+from .greeting.predict import load_model, predict
+from .greeting.train import Params as Params
+from .upgen_v1 import HandshakePattern, KeyPattern, set_parameters
 
 def cipher_of_security_param(secparam: int) -> psf.Cipher:
     match secparam:
@@ -792,13 +789,21 @@ def parse_args():
     parser.add_argument("-b", "--best", action="store_true")
     parser.add_argument("-w", "--worst", action="store_true")
 
-    parser.add_argument("config_filepath")
     parser.add_argument("best_params_filepath")
     parser.add_argument("encoder_filepath")
     parser.add_argument("model_filepath")
+    parser.add_argument(
+        "--config_filepath",
+        default=Path(__file__).with_name("config.json"),
+        help="protocol configuration file (default: packaged config.json)",
+    )
 
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def cli():
     main(parse_args())
+
+
+if __name__ == "__main__":
+    cli()

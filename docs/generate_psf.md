@@ -2,24 +2,21 @@
 
 After training the model, follow the following instructions to generate a PSF:
 
-1. Go back to src/ directory
+Run the generator from the repository root:
 
 ```
-$ cd ..
+$ make generate
 ```
 
-2. Use generate.py to create PSFs
+This reads the model artifacts under `build/` and creates `build/upgen.psf`.
+The directory is ignored by Git. The packaged `config.json` is used by default.
+
+To create multiple PSFs or choose a different output path, override the Make
+variables:
 
 ```
-$ python generate.py \
-  config.json \
-  greeting/best_params.pkl \
-  greeting/trained_model/encoder.pkl \
-  greeting/trained_model/model.torch \
-  -n 1 \
-  -o name.psf
+$ make generate NUM_GENERATED=5 PSF_FILE=build/examples.psf
 ```
 
-This will create a PSF file in the src/ directory.
-
-To create multiple PSFs, you can adjust the `-n` command line parameter.
+Additional generator options can be passed through `ARGS`, for example
+`make generate ARGS='--seed 12345'`.
