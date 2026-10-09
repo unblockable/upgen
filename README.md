@@ -24,28 +24,34 @@ For installing UPGen, please follow the [installation](docs/install.md) guide.
 ## Quickstart
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and GNU
-Make, then run the complete generation workflow from the repository root:
+Make, then install UPGen and its greeting-model runtime dependencies:
 
 ```console
-$ make sync-model
+$ make sync
+```
+
+UPGen needs greeting-model artifacts to generate PSFs, but you do not need to
+train them yourself. A pretrained model will be published in a forthcoming
+GitHub Release; its location and download instructions are currently TBD. Once
+the bundle is extracted into `build/`, generate a PSF with:
+
+```console
+$ make generate
+```
+
+Until the pretrained bundle is available—or whenever you want to train from
+your own data—create the artifacts locally before generating:
+
+```console
 $ make download
 $ make tune
 $ make train
 $ make generate
 ```
 
-Model tuning and training can take a while.
-
-The default `model` dependency set uses Metal automatically on a supported Mac
-and a CPU-only PyTorch build on Linux. On a Linux machine with a compatible
-NVIDIA GPU and driver, select the CUDA dependency set consistently:
-
-```console
-$ make sync-model MODEL_EXTRA=model-cuda
-$ make tune MODEL_EXTRA=model-cuda ARGS='--cuda 0'
-$ make train MODEL_EXTRA=model-cuda ARGS='--cuda 0'
-$ make generate MODEL_EXTRA=model-cuda
-```
+Model tuning and training can take a while. See the
+[greeting string model guide](docs/greeting_model.md) for both model-acquisition
+paths and the expected artifact layout.
 
 By default, the commands write their output files to a `build/` directory:
 

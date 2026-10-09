@@ -5,19 +5,16 @@ description = "Generate randomized Protocol Specification Files for censorship c
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-dependencies = []
+dependencies = [
+    "numpy",
+    "torch",
+    "tqdm",
+]
 
-[project.optional-dependencies]
-model = [
-    "numpy",
-    "torch",
-    "tqdm",
-]
-model-cuda = [
-    "numpy",
-    "torch",
-    "tqdm",
-]
+[dependency-groups]
+# These groups select a wheel source for the unconditional torch dependency.
+cpu-mps = ["torch"]
+cuda = ["torch"]
 
 [project.urls]
 Repository = "https://github.com/unblockable/upgen"
@@ -29,17 +26,18 @@ upgen-predict = "upgen.cli:predict"
 upgen-train = "upgen.cli:train"
 
 [tool.uv]
+default-groups = ["cpu-mps"]
 conflicts = [
     [
-        { extra = "model" },
-        { extra = "model-cuda" },
+        { group = "cpu-mps" },
+        { group = "cuda" },
     ],
 ]
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cpu", extra = "model" },
-    { index = "pytorch-cu130", extra = "model-cuda" },
+    { index = "pytorch-cpu", group = "cpu-mps" },
+    { index = "pytorch-cu130", group = "cuda" },
 ]
 
 [[tool.uv.index]]

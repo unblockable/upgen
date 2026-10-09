@@ -1,4 +1,4 @@
-"""Console entry points for commands with optional model dependencies."""
+"""Console entry points for model-backed commands."""
 
 from collections.abc import Callable
 from importlib import import_module
@@ -10,9 +10,8 @@ def model_command(module_name: str) -> Callable[[], None]:
     except ModuleNotFoundError as error:
         if error.name in {"numpy", "torch", "tqdm"}:
             raise SystemExit(
-                "Model dependencies are not installed. "
-                "Install them with `uv sync --extra model` for CPU/MPS or "
-                "`uv sync --extra model-cuda` for CUDA."
+                "Project dependencies are not installed. Run `uv sync` for "
+                "CPU/MPS, or `make sync CUDA=N` for CUDA device N."
             ) from error
         raise
 

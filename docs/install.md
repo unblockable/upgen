@@ -10,31 +10,26 @@ $ git clone https://github.com/unblockable/upgen.git
 $ cd upgen
 ```
 
-2. Create the project environment and install the locked dependencies:
+2. Create the project environment and install UPGen with its dependencies:
 
 ```
 $ uv sync
 ```
 
-   The equivalent Make command is `make sync`.
+   The equivalent Make command is `make sync`. PyTorch, NumPy, and tqdm are
+   standard project dependencies. Both pretrained and locally trained models
+   need PyTorch at runtime, although training the model itself remains optional.
 
-   This installs the basic UPGen source. To train and use greeting string
-   language models, include the optional model dependencies:
-
-```
-$ uv sync --extra model
-```
-
-   The equivalent Make command is `make sync-model`.
-
-   This selects CPU-only PyTorch on Linux and MPS-capable PyTorch on macOS. On
-   Linux with a compatible NVIDIA GPU and driver, select the CUDA 13.0 build
-   instead:
+   Plain `uv sync` selects CPU-only PyTorch on Linux and MPS-capable PyTorch on
+   macOS. On Linux with a compatible NVIDIA GPU and driver, select the CUDA 13.0
+   backend group instead:
 
 ```
-$ uv sync --extra model-cuda
+$ uv sync --no-group cpu-mps --group cuda
 ```
 
-   The equivalent Make command is
-   `make sync-model MODEL_EXTRA=model-cuda`. The `model` and `model-cuda`
-   extras conflict by design and must not be enabled together.
+   The equivalent Make command is `make sync CUDA=0`, where `0` is the CUDA
+   device number to use in subsequent model commands. The `cpu-mps` and `cuda`
+   backend groups are mutually exclusive. See the [greeting string model
+   guide](greeting_model.md) for details on how to train a greeting string
+   model.

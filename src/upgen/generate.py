@@ -742,7 +742,10 @@ def main(args: argparse.Namespace):
         out_f = open(args.output_filepath, "w")
 
     model, encoder, params, dev = load_model(
-        args.model_filepath, args.encoder_filepath, args.best_params_filepath, None
+        args.model_filepath,
+        args.encoder_filepath,
+        args.best_params_filepath,
+        args.cuda,
     )
 
     def gen_greeting():
@@ -782,6 +785,7 @@ def parse_args():
         default="info",
     )
     parser.add_argument("-s", "--seed", type=int, default=None)
+    parser.add_argument("-c", "--cuda", type=int)
     parser.add_argument("-o", "--output_filepath", type=str, default="-")
     parser.add_argument("-t", "--greeting_string_temp", type=float, default=0.9)
     parser.add_argument("-n", "--num_generated", type=int, default=1)

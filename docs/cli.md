@@ -8,15 +8,17 @@ CLI for custom usage.
 
 ---
 
-## Model training
+## Optional model training
 
 ```
-uv run --extra model upgen-train [options] input_filepath
+uv run upgen-train [options] input_filepath
 ```
 
-The `model` extra provides CPU-only PyTorch on Linux and MPS support on macOS.
-For CUDA training on Linux, use `--extra model-cuda` and pass `--cuda NUMBER`.
-The two extras cannot be enabled together.
+The default backend group provides CPU-only PyTorch on Linux and MPS support on
+macOS. For CUDA training on Linux, run uv with
+`--no-group cpu-mps --group cuda` and pass `--cuda NUMBER`. The two backend
+groups cannot be enabled together. Training is only needed when you are not
+using a compatible pretrained greeting model.
 
 ### Arguments
 
@@ -41,11 +43,14 @@ The two extras cannot be enabled together.
 ## PSF generation
 
 ```
-uv run --extra model upgen-generate [options] \
+uv run upgen-generate [options] \
     best_params_filepath \
     encoder_filepath \
     model_filepath
 ```
+
+The three model arguments may come from either a pretrained release or local
+training. See the [greeting string model guide](greeting_model.md).
 
 ### Arguments
 
@@ -62,6 +67,7 @@ uv run --extra model upgen-generate [options] \
 | -h, --help                      | Show the help message.                                              |
 | -l, --log_level                 | Set logging verbosity to debug, info, warning, error, or critical.  |
 | -s, --seed SEED                 | Set the random seed used for protocol-parameter sampling.           |
+| -c, --cuda NUMBER               | Generate with the selected CUDA device.                             |
 | -o, --output_filepath PATH      | Write PSFs to PATH; the Make workflow uses `build/upgen.psf`.       |
 | -t, --greeting_string_temp TEMP | Set the sampling temperature used by the greeting-string model.     |
 | -n, --num_generated NUMBER      | Number of PSFs to generate.                                         |
@@ -71,7 +77,7 @@ uv run --extra model upgen-generate [options] \
 
 ---
 
-## Download training repositories
+## Download optional training data
 
 ```
 uv run upgen-download-repos [options]

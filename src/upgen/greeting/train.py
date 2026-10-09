@@ -43,7 +43,7 @@ def select_device(cuda: typing.Optional[int]) -> torch.device:
         if torch.version.cuda is None:
             raise SystemExit(
                 "error: CUDA was requested, but the installed PyTorch build has "
-                "no CUDA support; install the `model-cuda` extra"
+                "no CUDA support; run `make sync CUDA=N` for CUDA device N"
             )
         raise SystemExit(
             f"error: PyTorch includes CUDA {torch.version.cuda}, but no CUDA "

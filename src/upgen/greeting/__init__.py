@@ -1,1 +1,1 @@
-"""Greeting model training and prediction."""
+"""Greeting string model training and prediction."""
