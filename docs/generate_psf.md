@@ -9,11 +9,17 @@ Run the generator from the repository root:
 $ make generate
 ```
 
-This reads the model artifacts under `build/` and creates `build/upgen.psf`.
+This passes `assets/config.json` to the generator, reads the model artifacts
+under `build/`, and creates `build/upgen.psf`.
 
-The packaged `config.json` is used by default, *but you are free to
-change/randomize the parameters to create various protocol distributions.*. The
-included `config.json` file just sets all random choices as equally likely.
+The configuration is an ordinary generator input, so you are free to copy and
+change it to create different protocol distributions. The included
+`assets/config.json` sets all random choices as equally likely. Select another
+configuration with the `CONFIG_FILE` Make variable:
+
+```
+$ make generate CONFIG_FILE=assets/my-config.json
+```
 
 If the environment was installed with the CUDA backend, use
 `make generate CUDA=0`

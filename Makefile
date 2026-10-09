@@ -8,11 +8,19 @@ MAKEFLAGS += --no-builtin-rules
 .DEFAULT_GOAL := help
 
 UV ?= uv
+CURL ?= curl
+TAR ?= tar
 CUDA ?=
 UV_BACKEND_OPTIONS := $(if $(strip $(CUDA)),--no-group cpu-mps --group cuda)
 CUDA_OPTION := $(if $(strip $(CUDA)),--cuda "$(CUDA)")
 BUILD_DIR ?= build
+CONFIG_FILE ?= assets/config.json
 REPOS_FILE ?= $(BUILD_DIR)/repos.txt
+MODEL_VERSION ?= 0.1.0
+MODEL_RELEASE_TAG ?= v$(MODEL_VERSION)
+MODEL_ARCHIVE_NAME ?= upgen_example_greeting_string_model_v$(MODEL_VERSION).tar.gz
+MODEL_URL ?= https://github.com/unblockable/upgen/releases/download/$(MODEL_RELEASE_TAG)/$(MODEL_ARCHIVE_NAME)
+MODEL_ARCHIVE ?= $(BUILD_DIR)/$(MODEL_ARCHIVE_NAME)
 BEST_PARAMS_FILE ?= $(BUILD_DIR)/best_params.pkl
 MODEL_DIR ?= $(BUILD_DIR)/model
 PSF_FILE ?= $(BUILD_DIR)/upgen.psf
@@ -23,20 +31,34 @@ help:
 	@echo "Generated artifacts default to $(BUILD_DIR)/"
 	@echo "Set CUDA=N to use CUDA device N; otherwise models use MPS or the CPU"
 	@echo
-	@echo "make sync        Install UPGen and its model dependencies"
-	@echo "make download    Download repository names for optional training"
-	@echo "make tune        Tune model hyperparameters (optional training)"
-	@echo "make train       Train the greeting model (optional)"
-	@echo "make predict     Sample greetings from the trained model"
-	@echo "make generate    Generate PSFs in $(PSF_FILE)"
-	@echo "make format      Format Python source code"
-	@echo "make lint        Check Python formatting and run Pylint"
-	@echo "make check       Check the lockfile and environment"
+	@echo "make sync            Install UPGen and its model dependencies"
+	@echo "make download-model  Download and extract the pretrained greeting model"
+	@echo "make download        Download repository names for optional training"
+	@echo "make tune            Tune model hyperparameters (optional training)"
+	@echo "make train           Train the greeting model (optional)"
+	@echo "make predict         Sample greetings from the trained model"
+	@echo "make generate        Generate PSFs in $(PSF_FILE)"
+	@echo "make format          Format Python source code"
+	@echo "make lint            Check Python formatting and run Pylint"
+	@echo "make check           Check the lockfile and environment"
 .PHONY: help
 
 sync:
 	$(UV) sync $(UV_BACKEND_OPTIONS)
 .PHONY: sync
+
+$(MODEL_ARCHIVE):
+	mkdir -p "$(dir $(MODEL_ARCHIVE))"
+	$(CURL) --fail --location --show-error \
+		--output "$(MODEL_ARCHIVE)" "$(MODEL_URL)"
+
+download-model: $(MODEL_ARCHIVE)
+	$(TAR) -xzf "$(MODEL_ARCHIVE)" -C "$(BUILD_DIR)"
+	test -f "$(BEST_PARAMS_FILE)"
+	test -f "$(MODEL_DIR)/encoder.pkl"
+	test -f "$(MODEL_DIR)/model.torch"
+	@echo "Pretrained greeting model installed under $(BUILD_DIR)/"
+.PHONY: download-model
 
 download:
 	mkdir -p "$(dir $(REPOS_FILE))"
@@ -70,6 +92,7 @@ predict:
 generate:
 	mkdir -p "$(dir $(PSF_FILE))"
 	$(UV) run $(UV_BACKEND_OPTIONS) upgen-generate \
+		"$(CONFIG_FILE)" \
 		"$(BEST_PARAMS_FILE)" \
 		"$(MODEL_DIR)/encoder.pkl" \
 		"$(MODEL_DIR)/model.torch" \

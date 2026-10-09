@@ -5,7 +5,6 @@ import copy
 from contextlib import contextmanager
 import json
 import logging
-from pathlib import Path
 import random
 import struct
 import sys
@@ -808,14 +807,12 @@ def parse_args():
     parser.add_argument("-b", "--best", action="store_true")
     parser.add_argument("-w", "--worst", action="store_true")
 
+    parser.add_argument(
+        "config_filepath", help="protocol generation configuration JSON file"
+    )
     parser.add_argument("best_params_filepath")
     parser.add_argument("encoder_filepath")
     parser.add_argument("model_filepath")
-    parser.add_argument(
-        "--config_filepath",
-        default=Path(__file__).with_name("config.json"),
-        help="protocol configuration file (default: packaged config.json)",
-    )
 
     return parser.parse_args()
 

@@ -44,21 +44,25 @@ using a compatible pretrained greeting model.
 
 ```
 uv run upgen-generate [options] \
+    config_filepath \
     best_params_filepath \
     encoder_filepath \
     model_filepath
 ```
 
 The three model arguments may come from either a pretrained release or local
-training. See the [greeting string model guide](greeting_model.md).
+training. The configuration is passed separately so it can be changed without
+modifying the installed package. See the [greeting string model
+guide](greeting_model.md).
 
 ### Arguments
 
-| Argument               | Description              |
-| ---------------------- | ------------------------ |
-| best_params_filepath   | Path to best_params.pkl. |
-| encoder_filepath       | Path to encoder.pkl.     |
-| model_filepath         | Path to model.torch.     |
+| Argument               | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| config_filepath        | Path to the protocol generation configuration. |
+| best_params_filepath   | Path to best_params.pkl.                       |
+| encoder_filepath       | Path to encoder.pkl.                           |
+| model_filepath         | Path to model.torch.                           |
 
 ### Flags
 
@@ -73,7 +77,6 @@ training. See the [greeting string model guide](greeting_model.md).
 | -n, --num_generated NUMBER      | Number of PSFs to generate.                                         |
 | -b, --best                      | Generate the fixed best-case.                                       |
 | -w, --worst                     | Generate the fixed worst-case.                                      |
-| --config_filepath PATH          | Use PATH instead of the packaged protocol configuration.            |
 
 ---
 
