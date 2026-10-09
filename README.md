@@ -24,45 +24,16 @@ For installing UPGen, please follow the [installation](docs/install.md) guide.
 ## Quickstart
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and GNU
-Make, then install UPGen and its greeting-model runtime dependencies:
+Make, then install UPGen and its dependencies:
 
 ```console
 $ make sync
 ```
 
-UPGen needs greeting-model artifacts to generate PSFs, but you do not need to
-train them yourself. A pretrained model will be published in a forthcoming
-GitHub Release; its location and download instructions are currently TBD. Once
-the bundle is extracted into `build/`, generate a PSF with:
+!! TODO: Add instructions for getting a greeting string model.
 
 ```console
 $ make generate
-```
-
-Until the pretrained bundle is available—or whenever you want to train from
-your own data—create the artifacts locally before generating:
-
-```console
-$ make download
-$ make tune
-$ make train
-$ make generate
-```
-
-Model tuning and training can take a while. See the
-[greeting string model guide](docs/greeting_model.md) for both model-acquisition
-paths and the expected artifact layout.
-
-By default, the commands write their output files to a `build/` directory:
-
-```text
-build/
-├── repos.txt
-├── best_params.pkl
-├── model/
-│   ├── encoder.pkl
-│   └── model.torch
-└── upgen.psf
 ```
 
 Run `make` to list the available commands. Paths and generation options can be
