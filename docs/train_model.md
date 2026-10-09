@@ -47,6 +47,4 @@ $ mkdir trained_model/
 $ python3 train.py -c 0 -b best_params.pkl -d trained_model/ repos.txt
 ```
 
-It will create the model artifacts inside trained_model/ directory. To check
-sample model artifacts, please check the [model_samples](model_samples/)
-directory. This completes model training and now we are ready to generate PSFs.
+It will create the model artifacts inside trained_model/ directory. This completes model training and now we are ready to generate PSFs.
