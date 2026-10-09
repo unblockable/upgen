@@ -12,10 +12,10 @@ $ make generate
 This passes `assets/config.json` to the generator, reads the model artifacts
 under `build/`, and creates `build/upgen.psf`.
 
-The configuration is an ordinary generator input, so you are free to copy and
-change it to create different protocol distributions. The included
-`assets/config.json` sets all random choices as equally likely. Select another
-configuration with the `CONFIG_FILE` Make variable:
+The configuration is a generator input, so you can change it to create different
+protocol distributions. The included `assets/config.json` sets all random
+choices as equally likely. Select a different configuration with the
+`CONFIG_FILE` Make variable:
 
 ```
 $ make generate CONFIG_FILE=assets/my-config.json

@@ -25,7 +25,7 @@ $ make download-model
 The Make target downloads
 [`upgen_example_greeting_string_model_v0.1.0.tar.gz`](https://github.com/unblockable/upgen/releases/download/v0.1.0/upgen_example_greeting_string_model_v0.1.0.tar.gz)
 into `build/`, extracts it there, and verifies that all three required files are
-present. Use `make -B download-model` to download a fresh copy.
+present. Use `make -B download-model` to download a new copy.
 
 The default release tag is `v0.1.0`. A different published model or release tag
 can be selected without editing the Makefile, for example:

@@ -3,8 +3,8 @@
 This document explains the CLI behaviour of UPGen.
 
 The Make targets provide the standard project workflow and place their outputs
-under the ignored `build/` directory. The commands below document the underlying
-CLI for custom usage.
+under the `build/` directory. The commands below document the underlying CLI for
+custom usage.
 
 ---
 
