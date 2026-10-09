@@ -41,6 +41,7 @@ help:
 	@echo "make format          Format Python source code"
 	@echo "make lint            Check Python formatting and run Pylint"
 	@echo "make check           Check the lockfile and environment"
+	@echo "make clean           Deletes the build/ dir."
 .PHONY: help
 
 sync:
@@ -113,3 +114,7 @@ check:
 	$(UV) lock --check
 	$(UV) sync --locked --check $(UV_BACKEND_OPTIONS)
 .PHONY: check
+
+clean:
+	rm -rf $(BUILD_DIR)
+.PHONY: clean
