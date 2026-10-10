@@ -92,4 +92,4 @@ ratbite-ssetelas
 
 ## Train a model locally
 
-See the training documentation: [train_model.md].
+See the training documentation: [train_model.md](train_model.md).
