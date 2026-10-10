@@ -58,7 +58,7 @@ See the [documentation](docs/README.md) to generate PSFs and to get related info
 You can read more about UPGen in our
 [USENIX Security publication](https://www.usenix.org/conference/usenixsecurity25/presentation/wails):
 
-```
+```bibtex
 @inproceedings{wails:usenixsec:25,
   author       = {Ryan Wails
                   Rob Jansen and
