@@ -60,7 +60,7 @@ You can read more about UPGen in our
 
 ```bibtex
 @inproceedings{wails:usenixsec:25,
-  author       = {Ryan Wails
+  author       = {Ryan Wails and
                   Rob Jansen and
                   Aaron Johnson and
                   Micah Sherr},
