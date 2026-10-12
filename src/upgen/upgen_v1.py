@@ -24,6 +24,16 @@ def sample_from_parameters(k):
     return choice_probs(val_prob_pairs_of_k)
 
 
+# Convert strings to boolean values defensively if any remaining
+def parameter_value(value):
+    if isinstance(value, str):
+        normalized = value.lower()
+        if normalized == "true":
+            return True
+        if normalized == "false":
+            return False
+    return value
+
 def range_of_parameters(k):
     minval = PARAMETERS["ranges"][k]["min"]
     maxval = PARAMETERS["ranges"][k]["max"]
