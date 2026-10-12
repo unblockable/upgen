@@ -18,7 +18,13 @@ def set_parameters(parameters):
 
 def sample_from_parameters(k):
     val_prob_pairs_of_k = list(
-        map(lambda k: (k["value"], k["probability"]), PARAMETERS["probabilities"][k])
+        map(
+            lambda parameter: (
+                parameter_value(parameter["value"]),
+                parameter["probability"],
+            ),
+            PARAMETERS["probabilities"][k],
+        )
     )
 
     return choice_probs(val_prob_pairs_of_k)
