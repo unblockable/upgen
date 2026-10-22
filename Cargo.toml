@@ -1,0 +1,16 @@
+[package]
+name = "upgen"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4", features = ["derive"], optional = true }
+serde_json = "1.0.154"
+
+[features]
+cli = ["dep:clap"]
+
+[[bin]]
+name = "upgen"
+path = "src/main.rs"
+required-features = ["cli"]
