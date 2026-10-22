@@ -2,6 +2,9 @@
 name = "upgen"
 version = "1.0.0"
 edition = "2024"
+rust-version = "1.85"
+description = "The Unidentified Protocol Generator"
+license-file = "LICENSE"
 
 [dependencies]
 clap = { version = "4", features = ["derive"], optional = true }
